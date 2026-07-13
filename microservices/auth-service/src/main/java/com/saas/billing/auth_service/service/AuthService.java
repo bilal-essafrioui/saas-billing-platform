@@ -12,6 +12,7 @@ import com.saas.billing.auth_service.exception.AccountBlockedException;
 import com.saas.billing.auth_service.exception.EmailAlreadyExistsException;
 import com.saas.billing.auth_service.exception.InvalidCredentialsException;
 import com.saas.billing.auth_service.exception.UserNotFoundException;
+import com.saas.billing.auth_service.messaging.producer.UserEventPublisher;
 import com.saas.billing.auth_service.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -26,13 +27,15 @@ public class AuthService {
     private final RefreshTokenService refreshTokenService;
     private final BruteForceProtectionService bruteForceProtectionService;
     private final PasswordEncoder passwordEncoder;
+    private final UserEventPublisher userEventPublisher;
 
-    public AuthService(UserRepository userRepository, JwtService jwtService, RefreshTokenService refreshTokenService, BruteForceProtectionService bruteForceProtectionService, PasswordEncoder passwordEncoder) {
+    public AuthService(UserRepository userRepository, JwtService jwtService, RefreshTokenService refreshTokenService, BruteForceProtectionService bruteForceProtectionService, PasswordEncoder passwordEncoder, UserEventPublisher userEventPublisher) {
         this.userRepository = userRepository;
         this.jwtService = jwtService;
         this.refreshTokenService = refreshTokenService;
         this.bruteForceProtectionService = bruteForceProtectionService;
         this.passwordEncoder = passwordEncoder;
+        this.userEventPublisher = userEventPublisher;
     }
 
     // ════════════════════════════════════
@@ -56,6 +59,12 @@ public class AuthService {
                 .build();
 
         user = userRepository.save(user);
+
+        // publish event UserCreated in Kafka
+        // → subscription-service va stocker ce user and other subscribed services
+        //   dans sa table users_cache
+
+        userEventPublisher.publishUserCreated(user);
 
         // Generate tokens
         String accessToken = jwtService.generateToken(user);
