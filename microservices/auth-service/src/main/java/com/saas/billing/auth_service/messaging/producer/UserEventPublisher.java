@@ -31,7 +31,7 @@ public class UserEventPublisher {
         UserCreatedEvent event = UserCreatedEvent.builder()
                 .userId(user.getId())
                 .firstName(user.getFirstName())
-                .lastName(user.getFirstName())
+                .lastName(user.getLastName())
                 .email(user.getEmail())
                 .build();
 

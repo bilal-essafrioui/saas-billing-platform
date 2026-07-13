@@ -8,6 +8,7 @@ import com.saas.billing.subscription_service.dto.response.DashboardStatsResponse
 import com.saas.billing.subscription_service.dto.response.ProrataResponse;
 import com.saas.billing.subscription_service.dto.response.SubscriptionEventResponse;
 import com.saas.billing.subscription_service.dto.response.SubscriptionResponse;
+import com.saas.billing.subscription_service.security.AuthenticatedUser;
 import com.saas.billing.subscription_service.service.SubscriptionEventService;
 import com.saas.billing.subscription_service.service.SubscriptionService;
 import jakarta.validation.Valid;
@@ -196,9 +197,13 @@ public class SubscriptionController {
     // ════════════════════════════════════
 
     private UUID extractUserId() {
-        Authentication auth = SecurityContextHolder
+        Authentication authentication = SecurityContextHolder
                 .getContext()
                 .getAuthentication();
-        return UUID.fromString((String) auth.getDetails());
+
+        AuthenticatedUser user =
+                (AuthenticatedUser) authentication.getPrincipal();
+
+        return UUID.fromString(user.userId());
     }
 }

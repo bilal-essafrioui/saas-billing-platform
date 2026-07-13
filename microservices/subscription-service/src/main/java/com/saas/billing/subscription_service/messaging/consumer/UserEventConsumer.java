@@ -5,6 +5,7 @@ import com.saas.billing.subscription_service.domain.entity.UserCache;
 import com.saas.billing.subscription_service.messaging.KafkaTopics;
 import com.saas.billing.subscription_service.messaging.event.UserCreatedEvent;
 import com.saas.billing.subscription_service.repository.UserCacheRepository;
+import com.saas.billing.subscription_service.service.SubscriptionStatusUpdater;
 import org.springframework.kafka.annotation.KafkaListener;
 
 import org.springframework.stereotype.Component;
@@ -14,12 +15,15 @@ public class UserEventConsumer {
 
     private final UserCacheRepository userCacheRepository;
     private final ObjectMapper objectMapper;
+    private final SubscriptionStatusUpdater subscriptionStatusUpdater;
 
     public UserEventConsumer(
             UserCacheRepository userCacheRepository,
-            ObjectMapper objectMapper) {
+            ObjectMapper objectMapper,
+            SubscriptionStatusUpdater subscriptionStatusUpdater) {
         this.userCacheRepository = userCacheRepository;
         this.objectMapper = objectMapper;
+        this.subscriptionStatusUpdater = subscriptionStatusUpdater;
     }
 
     // ════════════════════════════════════
@@ -80,8 +84,7 @@ public class UserEventConsumer {
             // déléguer au SubscriptionService
             // le service met à jour le statut
             // et la date de renouvellement
-            // subscriptionStatusUpdater.onPaymentSucceeded(subscriptionId);
-            System.out.print("subscriptionStatusUpdater.onPaymentSucceeded(subscriptionId); in UserEventConsumer class");
+            subscriptionStatusUpdater.onPaymentSucceeded(subscriptionId);
 
         } catch (Exception e) {
             System.err.println(
@@ -107,8 +110,7 @@ public class UserEventConsumer {
                     node.get("subscriptionId").asText()
             );
 
-            //subscriptionStatusUpdater.onPaymentFailed(subscriptionId);
-            System.out.print("subscriptionStatusUpdater.onPaymentFailed(subscriptionId); in UserEventConsumer class");
+            subscriptionStatusUpdater.onPaymentFailed(subscriptionId);
 
         } catch (Exception e) {
             System.err.println(
