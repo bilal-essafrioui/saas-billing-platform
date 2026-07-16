@@ -1,5 +1,6 @@
 package com.saas.billing.auth_service.service;
 
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
@@ -15,7 +16,7 @@ public class BruteForceProtectionService {
 
     private final RedisTemplate<String, String> redisTemplate;
 
-    public BruteForceProtectionService(RedisTemplate<String, String> redisTemplate) {
+    public BruteForceProtectionService( @Qualifier("redisTemplate") RedisTemplate<String, String> redisTemplate) {
         this.redisTemplate = redisTemplate;
     }
 

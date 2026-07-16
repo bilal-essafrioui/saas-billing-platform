@@ -3,6 +3,7 @@ package com.saas.billing.auth_service.messaging.producer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.saas.billing.auth_service.domain.entity.User;
 import com.saas.billing.auth_service.messaging.KafkaTopics;
+import com.saas.billing.auth_service.messaging.event.OtpGeneratedEvent;
 import com.saas.billing.auth_service.messaging.event.UserCreatedEvent;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
@@ -36,6 +37,23 @@ public class UserEventPublisher {
                 .build();
 
         publish(KafkaTopics.USER_CREATED, event);
+    }
+
+    // ════════════════════════════════════
+    // PUBLISH OTP GENERATED
+    // email-service listens and sends
+    // the verification email
+    // ════════════════════════════════════
+
+    public void publishOtpGenerated(String email, String otp) {
+
+        OtpGeneratedEvent event = new OtpGeneratedEvent(
+                email,
+                otp,
+                10
+        );
+
+        publish(KafkaTopics.OTP_GENERATED, event);
     }
 
     // ════════════════════════════════════

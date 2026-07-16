@@ -49,7 +49,7 @@ public interface SubscriptionRepository
     List<Subscription> findByStatus(SubscriptionStatus status);
 
     // ════════════════════════════════════
-    // SCHEDULER BILLING
+    // SCHEDULER subscription
     // ACTIVE SUBSCRIPTIONS TO Schedule today
     // ════════════════════════════════════
 

@@ -1,111 +1,165 @@
+@import "tailwindcss";
+
 :root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+  /* ==========================================================
+     BACKGROUNDS
+     ========================================================== */
+  --bg-page: #0d0d14;
+  --bg-sidebar: #13131a;
+  --bg-card: #1a1a24;
+  --bg-card-hover: #1f1f2e;
+  --bg-input: #13131a;
+  --bg-modal: #1a1a24;
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
+  /* Modal */
+  --overlay: rgba(0, 0, 0, 0.6);
 
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  /* ==========================================================
+     BORDERS
+     ========================================================== */
+  --border: #252535;
+  --border-active: #5b5ef4;
 
-  @media (max-width: 1024px) {
-    font-size: 16px;
-  }
+  /* ==========================================================
+     PRIMARY BRAND
+     ========================================================== */
+  --primary: #5b5ef4;
+  --primary-hover: #4a4dd4;
+  --primary-glow: rgba(91, 94, 244, 0.15);
+
+  /* ==========================================================
+     TEXT
+     ========================================================== */
+  --text-primary: #eeeef5;
+  --text-secondary: #9898b0;
+  --text-muted: #5e5e78;
+  --text-button: #ffffff;
+  --text-link: #5b5ef4;
+
+  /* ==========================================================
+     SUCCESS
+     ========================================================== */
+  --success-text: #4ade80;
+  --success-bg: #0a1f12;
+  --success-border: #1a3d22;
+
+  /* ==========================================================
+     WARNING
+     ========================================================== */
+  --warning-text: #f59e0b;
+  --warning-bg: #1f1508;
+  --warning-border: #3d2a0a;
+
+  /* ==========================================================
+     ERROR
+     ========================================================== */
+  --error-text: #f87171;
+  --error-bg: #1f0808;
+  --error-border: #3d1515;
+
+  /* ==========================================================
+     INFO
+     ========================================================== */
+  --info-text: #93c5fd;
+  --info-bg: #080f1f;
+  --info-border: #0f2040;
+
+  /* ==========================================================
+     ENTERPRISE / GOLD
+     ========================================================== */
+  --gold-text: #f59e0b;
+  --gold-bg: #1f1508;
+  --gold-border: #3d2a0a;
+
+  /* ==========================================================
+     SHADOWS
+     ========================================================== */
+  --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.3);
+
+  /* ==========================================================
+     BORDER RADIUS
+     ========================================================== */
+  --radius-card: 10px;
+  --radius-button: 7px;
+  --radius-input: 7px;
+  --radius-badge: 999px;
+
+  /* ==========================================================
+     SIDEBAR
+     ========================================================== */
+  --sidebar-width: 220px;
+
+  /* ==========================================================
+     SPACING
+     ========================================================== */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 28px;
+  --space-8: 32px;
+  --space-9: 40px;
+
+  /* ==========================================================
+     TYPOGRAPHY
+     ========================================================== */
+  --font-family: "Inter", sans-serif;
+
+  --font-size-h1: 28px;
+  --font-size-h2: 20px;
+  --font-size-h3: 15px;
+  --font-size-body: 14px;
+  --font-size-label: 12px;
+  --font-size-button: 14px;
+
+  --font-weight-h1: 600;
+  --font-weight-h2: 600;
+  --font-weight-h3: 600;
+  --font-weight-body: 400;
+  --font-weight-label: 500;
+  --font-weight-button: 500;
+
+  --line-height-body: 1.6;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
-
-  #social .button-icon {
-    filter: invert(1) brightness(2);
-  }
-}
-
+html,
+body,
 #root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
+  width: 100%;
+  min-height: 100%;
 }
 
 body {
   margin: 0;
+  font-family: var(--font-family);
+  background: var(--bg-page);
+  color: var(--text-primary);
+  line-height: var(--line-height-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
-  }
-}
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
-  }
-}
-p {
-  margin: 0;
+button,
+input,
+textarea,
+select {
+  font: inherit;
 }
 
-code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
+a {
+  color: var(--text-link);
+  text-decoration: none;
 }
 
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
+img {
+  display: block;
+  max-width: 100%;
 }

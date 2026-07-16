@@ -119,6 +119,58 @@ public class GlobalExceptionHandler {
     }
 
     // ════════════════════════════════════
+    // PENDING REGISTRATION → 409 CONFLICT
+    // ════════════════════════════════════
+
+    @ExceptionHandler(PendingRegistrationAlreadyExistsException.class)
+    public ResponseEntity<ErrorResponse> handlePendingRegistrationAlreadyExists(
+            PendingRegistrationAlreadyExistsException ex) {
+
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(ErrorResponse.of(
+                        409,
+                        "PENDING_REGISTRATION_ALREADY_EXISTS",
+                        ex.getMessage()
+                ));
+    }
+
+    // ════════════════════════════════════
+    // PENDING REGISTRATION NOT FOUND → 404
+    // ════════════════════════════════════
+
+    @ExceptionHandler(PendingRegistrationNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handlePendingRegistrationNotFound(
+            PendingRegistrationNotFoundException ex) {
+
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(ErrorResponse.of(
+                        404,
+                        "PENDING_REGISTRATION_NOT_FOUND",
+                        ex.getMessage()
+                ));
+    }
+
+    // ════════════════════════════════════
+    // INVALID OTP → 400 BAD REQUEST
+    // ════════════════════════════════════
+
+    @ExceptionHandler(InvalidOtpException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidOtp(
+            InvalidOtpException ex) {
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(ErrorResponse.of(
+                        400,
+                        "INVALID_OTP",
+                        ex.getMessage()
+                ));
+    }
+
+
+    // ════════════════════════════════════
     // INPUTS VALIDATION → 400 BAD REQUEST
     // called when @Valid failed sur un DTO
     // ════════════════════════════════════

@@ -3,7 +3,9 @@ package com.saas.billing.auth_service.controller;
 import com.saas.billing.auth_service.dto.request.LoginRequest;
 import com.saas.billing.auth_service.dto.request.RefreshTokenRequest;
 import com.saas.billing.auth_service.dto.request.RegisterRequest;
+import com.saas.billing.auth_service.dto.request.VerifyEmailRequest;
 import com.saas.billing.auth_service.dto.response.AuthResponse;
+import com.saas.billing.auth_service.dto.response.RegistrationPendingResponse;
 import com.saas.billing.auth_service.dto.response.UserResponse;
 import com.saas.billing.auth_service.security.AuthenticatedUser;
 import com.saas.billing.auth_service.service.AuthService;
@@ -29,13 +31,24 @@ public class AuthController {
     // ════════════════════════════════════
 
     @PostMapping("/register")
-    public ResponseEntity<AuthResponse> register(
+    public ResponseEntity<RegistrationPendingResponse> register(
             @Valid @RequestBody RegisterRequest request) {
 
-        AuthResponse response = authService.register(request);
+        RegistrationPendingResponse response = authService.register(request);
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(response);
+    }
+
+    // ════════════════════════════════════
+    // POST /api/auth/verify-email
+    // public endpoint
+    // ════════════════════════════════════
+    @PostMapping("/verify-email")
+    public ResponseEntity<AuthResponse> verifyEmail(
+            @Valid @RequestBody VerifyEmailRequest request
+    ) {
+        return ResponseEntity.ok(authService.verifyEmail(request));
     }
 
     // ════════════════════════════════════

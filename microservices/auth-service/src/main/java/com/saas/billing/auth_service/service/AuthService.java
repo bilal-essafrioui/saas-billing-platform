@@ -5,13 +5,13 @@ import com.saas.billing.auth_service.domain.entity.RefreshToken;
 import com.saas.billing.auth_service.domain.entity.User;
 import com.saas.billing.auth_service.domain.enums.Role;
 import com.saas.billing.auth_service.dto.request.LoginRequest;
+import com.saas.billing.auth_service.dto.request.PendingRegistrationRequest;
 import com.saas.billing.auth_service.dto.request.RegisterRequest;
+import com.saas.billing.auth_service.dto.request.VerifyEmailRequest;
 import com.saas.billing.auth_service.dto.response.AuthResponse;
+import com.saas.billing.auth_service.dto.response.RegistrationPendingResponse;
 import com.saas.billing.auth_service.dto.response.UserResponse;
-import com.saas.billing.auth_service.exception.AccountBlockedException;
-import com.saas.billing.auth_service.exception.EmailAlreadyExistsException;
-import com.saas.billing.auth_service.exception.InvalidCredentialsException;
-import com.saas.billing.auth_service.exception.UserNotFoundException;
+import com.saas.billing.auth_service.exception.*;
 import com.saas.billing.auth_service.messaging.producer.UserEventPublisher;
 import com.saas.billing.auth_service.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -28,51 +28,124 @@ public class AuthService {
     private final BruteForceProtectionService bruteForceProtectionService;
     private final PasswordEncoder passwordEncoder;
     private final UserEventPublisher userEventPublisher;
+    private final PendingRegistrationService pendingRegistrationService;
+    private final OtpService otpService;
 
-    public AuthService(UserRepository userRepository, JwtService jwtService, RefreshTokenService refreshTokenService, BruteForceProtectionService bruteForceProtectionService, PasswordEncoder passwordEncoder, UserEventPublisher userEventPublisher) {
+    public AuthService(UserRepository userRepository, JwtService jwtService, RefreshTokenService refreshTokenService, BruteForceProtectionService bruteForceProtectionService, PasswordEncoder passwordEncoder, UserEventPublisher userEventPublisher, PendingRegistrationService pendingRegistrationService, OtpService otpService) {
         this.userRepository = userRepository;
         this.jwtService = jwtService;
         this.refreshTokenService = refreshTokenService;
         this.bruteForceProtectionService = bruteForceProtectionService;
         this.passwordEncoder = passwordEncoder;
         this.userEventPublisher = userEventPublisher;
+        this.pendingRegistrationService = pendingRegistrationService;
+        this.otpService = otpService;
     }
 
     // ════════════════════════════════════
     // INSCRIPTION
     // ════════════════════════════════════
     @Transactional
-    public AuthResponse register(RegisterRequest request) {
+    public RegistrationPendingResponse register(RegisterRequest request) {
         // Verify if email already in use
         if (userRepository.existsByEmail(request.email())) {
             throw new EmailAlreadyExistsException(
-                    "Email déjà utilisé : " + request.email()
+                    "Email already exists : " + request.email()
+            );
+        }
+
+        // A verification is already pending
+        if (pendingRegistrationService.exists(request.email())) {
+            throw new PendingRegistrationAlreadyExistsException(
+                    "A verification code has already been sent."
+            );
+        }
+
+        // Hash password
+        String passwordHash = passwordEncoder.encode(request.password());
+
+        // Store temporary registration
+        PendingRegistrationRequest pendingRegistration =
+                PendingRegistrationRequest.builder()
+                        .firstName(request.firstName())
+                        .lastName(request.lastName())
+                        .email(request.email())
+                        .passwordHash(passwordHash)
+                        .build();
+
+        pendingRegistrationService.save(pendingRegistration);
+
+        String otp = otpService.generateOtp();
+
+        // Store OTP
+        otpService.saveOtp(request.email(), otp);
+
+        // Publish SendOtpEvent via Kafka
+        // email-service will send the email
+
+        userEventPublisher.publishOtpGenerated(request.email(), otp);
+
+        return new RegistrationPendingResponse(
+                "Verification code sent successfully.",
+                request.email()
+        );
+
+    }
+
+    @Transactional
+    public AuthResponse verifyEmail(VerifyEmailRequest request) {
+        // Retrieve pending registration
+        PendingRegistrationRequest pendingRegistration =
+                pendingRegistrationService.get(request.email());
+
+        if (pendingRegistration == null) {
+            throw new PendingRegistrationNotFoundException(
+                    "Registration has expired or does not exist."
+            );
+        }
+
+        // OTP expired
+        if (!otpService.exists(request.email())) {
+            throw new InvalidOtpException(
+                    "Verification code has expired."
+            );
+        }
+
+        // OTP incorrect
+        if (!otpService.verifyOtp(request.email(), request.otp())) {
+            throw new InvalidOtpException(
+                    "Invalid verification code."
+            );
+        }
+
+        // Final safety check
+        if (userRepository.existsByEmail(pendingRegistration.email())) {
+            throw new EmailAlreadyExistsException(
+                    "Email already exists: " + pendingRegistration.email()
             );
         }
 
         User user = User.builder()
-                .firstName(request.firstName())
-                .lastName(request.lastName())
-                .email(request.email())
-                .passwordHash(passwordEncoder.encode(request.password()))
+                .firstName(pendingRegistration.firstName())
+                .lastName(pendingRegistration.lastName())
+                .email(pendingRegistration.email())
+                .passwordHash(pendingRegistration.passwordHash())
                 .role(Role.CUSTOMER)
                 .build();
 
         user = userRepository.save(user);
 
-        // publish event UserCreated in Kafka
-        // → subscription-service va stocker ce user and other subscribed services
-        //   dans sa table users_cache
-
+        // Publish Kafka event
         userEventPublisher.publishUserCreated(user);
 
         // Generate tokens
         String accessToken = jwtService.generateToken(user);
         String refreshToken = refreshTokenService.createRefreshToken(user);
 
-        // missing email verification otp
-        return buildAuthResponse(user, accessToken, refreshToken);
+        otpService.deleteOtp(request.email());
+        pendingRegistrationService.delete(request.email());
 
+        return buildAuthResponse(user, accessToken, refreshToken);
     }
 
     // ════════════════════════════════════
