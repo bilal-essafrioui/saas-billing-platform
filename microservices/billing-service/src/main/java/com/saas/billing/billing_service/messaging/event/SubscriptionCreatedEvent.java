@@ -6,6 +6,7 @@ import java.util.UUID;
 
 public record SubscriptionCreatedEvent(
         UUID subscriptionId,
+        UUID paymentId,
         UUID userId,
         String userEmail,
         UUID planId,

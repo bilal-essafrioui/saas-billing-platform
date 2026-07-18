@@ -32,6 +32,8 @@ public class InvoiceService {
         this.eventPublisher = eventPublisher;
     }
 
+    // create first invoice
+
     // ════════════════════════════════════
     // CRÉER FACTURE MENSUELLE (RECURRING)
     // appelé par le scheduler
@@ -72,6 +74,49 @@ public class InvoiceService {
 
         // publish to Kafka → payment-service va déclencher le paiement
         eventPublisher.publishInvoiceGenerated(invoice);
+
+        return invoice;
+    }
+
+    // create first invoice
+    @Transactional
+    public Invoice createFirstInvoiceAfterPayment(
+            UUID subscriptionId,
+            UUID paymentId,
+            UUID userId,
+            String userEmail,
+            BigDecimal amount,
+            LocalDate billingDate
+    ) {
+
+        String idempotencyKey = idempotencyService
+                .generateKey(subscriptionId, billingDate);
+
+        if (idempotencyService.invoiceAlreadyExists(idempotencyKey)) {
+            return invoiceRepository
+                    .findByIdempotencyKey(idempotencyKey)
+                    .orElseThrow();
+        }
+
+        Invoice invoice = Invoice.builder()
+                .subscriptionId(subscriptionId)
+                .userId(userId)
+                .userEmail(userEmail)
+                .amount(amount)
+                .status(InvoiceStatus.PAID)   // ← already paid
+                .paidAt(LocalDateTime.now())  // ← payment already happened
+                .type(InvoiceType.RECURRING)
+                .idempotencyKey(idempotencyKey)
+                .billingPeriodStart(billingDate)
+                .billingPeriodEnd(billingDate.plusMonths(1).minusDays(1))
+                .build();
+
+        invoice = invoiceRepository.save(invoice);
+
+        eventPublisher.publishFirstInvoiceCreated(
+                paymentId,
+                invoice
+        );
 
         return invoice;
     }

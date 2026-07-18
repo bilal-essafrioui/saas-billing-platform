@@ -1,5 +1,6 @@
 import { usePlans } from "../hooks/useGetPlans";
 import { Check } from "lucide-react";
+import { useCheckout } from "../hooks/useCheckout";
 
 type Plan = {
   id: string;
@@ -9,7 +10,27 @@ type Plan = {
   active: boolean;
 };
 
-function PlanCard({ plan }: { plan: Plan }) {
+type PlanCardProps = {
+  plan: Plan;
+  onCheckoutCreated: (clientSecret: string) => void;
+};
+
+function PlanCard({ plan, onCheckoutCreated,}: PlanCardProps) {
+  const { startCheckout, loading } = useCheckout();
+  const handleCheckout = async () => {
+    try {
+          const response = await startCheckout(plan.id);
+
+          console.log(response);
+
+          // next step:
+          onCheckoutCreated(response.clientSecret);
+
+      } catch (e) {
+          console.error(e);
+      }
+  };
+
   const features = plan.description
     .split("\n")
     .map(f => f.trim())
@@ -64,19 +85,27 @@ function PlanCard({ plan }: { plan: Plan }) {
       </ul>
 
       <button
+        onClick={handleCheckout}
+        disabled={loading}
         className={`mt-8 w-full rounded-[var(--radius-button)] py-3 text-sm font-medium ${
           plan.name === "Pro"
             ? "bg-[var(--primary)] text-[var(--text-button)] hover:bg-[var(--primary-hover)] cursor-pointer"
             : "border border-[var(--border)] text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] cursor-pointer"
         }`}
       >
-        {`choose ${plan.name.toLowerCase()}`}
+        {loading
+          ? "Preparing checkout..."
+          : `choose ${plan.name.toLowerCase()}`}
       </button>
     </div>
   );
 }
 
-export default function Plans() {
+type PlansProps = {
+  onCheckoutCreated: (clientSecret: string) => void;
+};
+
+export default function Plans({ onCheckoutCreated,}: PlansProps) {
   const { plans: fetchedPlans, loading, error } = usePlans();
  
   if (loading) return <p>Loading...</p>;
@@ -87,7 +116,11 @@ export default function Plans() {
   return (
     <div className="mt-14 flex flex-col items-center gap-8 md:flex-row md:items-stretch md:justify-center">
         {fetchedPlans.map((plan) => (
-        <PlanCard key={plan.id} plan={plan} />
+        <PlanCard
+            key={plan.id}
+            plan={plan}
+            onCheckoutCreated={onCheckoutCreated}
+        />
         ))}
     </div>
   );

@@ -3,11 +3,7 @@ package com.saas.billing.subscription_service.controller;
 import com.saas.billing.subscription_service.domain.enums.SubscriptionStatus;
 import com.saas.billing.subscription_service.dto.request.ChangePlanRequest;
 import com.saas.billing.subscription_service.dto.request.SubscribeRequest;
-import com.saas.billing.subscription_service.dto.response.AdminSubscriptionResponse;
-import com.saas.billing.subscription_service.dto.response.DashboardStatsResponse;
-import com.saas.billing.subscription_service.dto.response.ProrataResponse;
-import com.saas.billing.subscription_service.dto.response.SubscriptionEventResponse;
-import com.saas.billing.subscription_service.dto.response.SubscriptionResponse;
+import com.saas.billing.subscription_service.dto.response.*;
 import com.saas.billing.subscription_service.security.AuthenticatedUser;
 import com.saas.billing.subscription_service.service.SubscriptionEventService;
 import com.saas.billing.subscription_service.service.SubscriptionService;
@@ -42,7 +38,7 @@ public class SubscriptionController {
     // créer ou resubscribe
     // ════════════════════════════════════
 
-    @PostMapping("/subscribe")
+    /*@PostMapping("/subscribe")
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<SubscriptionResponse> subscribe(
             @Valid @RequestBody SubscribeRequest request) {
@@ -51,6 +47,18 @@ public class SubscriptionController {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(subscriptionService.subscribe(userId, request));
+    }*/
+
+    @PostMapping("/checkout")
+    @PreAuthorize("hasRole('CUSTOMER')")
+    public ResponseEntity<CreatePaymentIntentResponse> checkout(
+            @Valid @RequestBody SubscribeRequest request) {
+
+        UUID userId = extractUserId();
+
+        return ResponseEntity.ok(
+                subscriptionService.checkout(userId, request)
+        );
     }
 
     // ════════════════════════════════════

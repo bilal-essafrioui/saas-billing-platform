@@ -3,8 +3,10 @@ package com.saas.billing.subscription_service.messaging.consumer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.saas.billing.subscription_service.domain.entity.UserCache;
 import com.saas.billing.subscription_service.messaging.KafkaTopics;
+import com.saas.billing.subscription_service.messaging.event.PaymentSucceededEvent;
 import com.saas.billing.subscription_service.messaging.event.UserCreatedEvent;
 import com.saas.billing.subscription_service.repository.UserCacheRepository;
+import com.saas.billing.subscription_service.service.SubscriptionService;
 import com.saas.billing.subscription_service.service.SubscriptionStatusUpdater;
 import org.springframework.kafka.annotation.KafkaListener;
 
@@ -16,14 +18,16 @@ public class UserEventConsumer {
     private final UserCacheRepository userCacheRepository;
     private final ObjectMapper objectMapper;
     private final SubscriptionStatusUpdater subscriptionStatusUpdater;
+    private final SubscriptionService subscriptionService;
 
     public UserEventConsumer(
             UserCacheRepository userCacheRepository,
             ObjectMapper objectMapper,
-            SubscriptionStatusUpdater subscriptionStatusUpdater) {
+            SubscriptionStatusUpdater subscriptionStatusUpdater, SubscriptionService subscriptionService) {
         this.userCacheRepository = userCacheRepository;
         this.objectMapper = objectMapper;
         this.subscriptionStatusUpdater = subscriptionStatusUpdater;
+        this.subscriptionService = subscriptionService;
     }
 
     // ════════════════════════════════════
@@ -76,15 +80,20 @@ public class UserEventConsumer {
     public void handlePaymentSucceeded(String message) {
         try {
             // désérialiser l'event
-            var node = objectMapper.readTree(message);
+            /*var node = objectMapper.readTree(message);
             java.util.UUID subscriptionId = java.util.UUID.fromString(
                     node.get("subscriptionId").asText()
-            );
+            );*/
 
             // déléguer au SubscriptionService
             // le service met à jour le statut
             // et la date de renouvellement
-            subscriptionStatusUpdater.onPaymentSucceeded(subscriptionId);
+            //subscriptionStatusUpdater.onPaymentSucceeded(subscriptionId);
+
+            PaymentSucceededEvent event =
+                    objectMapper.readValue(message, PaymentSucceededEvent.class);
+
+            subscriptionService.createSubscriptionAfterPayment(event);
 
         } catch (Exception e) {
             System.err.println(

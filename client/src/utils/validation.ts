@@ -62,3 +62,16 @@ export function validateRegisterForm(data: {
 
   return null;
 }
+
+// validate email otp
+export function isValidOtp(otp: string): boolean {
+  return /^\d{6}$/.test(otp);
+}
+
+export function validateVerifyEmailForm(otp: string): string | null {
+  if (!isValidOtp(otp)) {
+    return "Verification code must contain exactly 6 digits.";
+  }
+
+  return null;
+}

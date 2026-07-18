@@ -1,16 +1,14 @@
 import React, { useEffect, useState } from "react";
-import {
-  Zap,
-  ShieldCheck,
-  AlertCircle,
-  ArrowRight,
-} from "lucide-react";
+import { Zap, ShieldCheck, AlertCircle, ArrowRight } from "lucide-react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import { useVerifyEmail } from "../hooks/useVerifyEmail";
+import { validateVerifyEmailForm } from "../../../utils/validation";
+import { toast } from "sonner";
 
 export default function VerificationForm() {
   const [otp, setOtp] = useState("");
-  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const { submit, loading, error } = useVerifyEmail();
 
   // getting email from state passed from register form
   const location = useLocation();
@@ -21,12 +19,33 @@ export default function VerificationForm() {
         navigate("/register");
     }
   }, [email, navigate]);
+
+  useEffect(() => {
+  if (error) {
+      toast.error(error);
+    }
+  }, [error]);
   
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // TODO: Verify OTP
+    console.log("Submit clicked");
+
+    const validationError = validateVerifyEmailForm(otp);
+
+    if (validationError) {
+      toast.error(validationError);
+      return;
+    }
+
+    const response = await submit({ email, otp});
+
+    if (response) {
+      toast.success("Email verified successfully!");
+
+      navigate("/choose-plan", { replace: true});
+    }
   };
 
   return (
@@ -53,12 +72,7 @@ export default function VerificationForm() {
           {email}
         </p>
 
-        {error && (
-          <div className="mt-6 flex items-center gap-3 rounded-[var(--radius-card)] border border-[var(--error-border)] bg-[var(--error-bg)] px-4 py-3">
-            <AlertCircle className="h-4 w-4 shrink-0 text-[var(--error-text)]" />
-            <span className="text-sm text-[var(--error-text)]">{error}</span>
-          </div>
-        )}
+        
 
         <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-5">
           {/* OTP */}
@@ -95,10 +109,17 @@ export default function VerificationForm() {
           {/* Submit */}
           <button
             type="submit"
+            disabled={loading}
             className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-[var(--radius-button)] bg-[var(--primary)] py-3 text-sm font-semibold text-white hover:bg-[var(--primary-hover)]"
           >
-            Verify Email
-            <ArrowRight className="h-4 w-4" />
+            {loading ? (
+              "Verifying..."
+            ) : (
+              <>
+                Verify Email
+                <ArrowRight className="h-4 w-4" />
+              </>
+            )}
           </button>
         </form>
 

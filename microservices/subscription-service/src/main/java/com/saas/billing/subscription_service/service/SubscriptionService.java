@@ -1,20 +1,21 @@
 package com.saas.billing.subscription_service.service;
 
+import com.saas.billing.subscription_service.client.PaymentClient;
 import com.saas.billing.subscription_service.domain.entity.Plan;
 import com.saas.billing.subscription_service.domain.entity.Subscription;
 import com.saas.billing.subscription_service.domain.entity.UserCache;
+import com.saas.billing.subscription_service.domain.enums.PaymentType;
 import com.saas.billing.subscription_service.domain.enums.SubscriptionEventType;
 import com.saas.billing.subscription_service.domain.enums.SubscriptionStatus;
 import com.saas.billing.subscription_service.dto.request.ChangePlanRequest;
+import com.saas.billing.subscription_service.dto.request.CreatePaymentIntentRequest;
 import com.saas.billing.subscription_service.dto.request.SubscribeRequest;
-import com.saas.billing.subscription_service.dto.response.AdminSubscriptionResponse;
-import com.saas.billing.subscription_service.dto.response.DashboardStatsResponse;
-import com.saas.billing.subscription_service.dto.response.ProrataResponse;
-import com.saas.billing.subscription_service.dto.response.SubscriptionResponse;
+import com.saas.billing.subscription_service.dto.response.*;
 import com.saas.billing.subscription_service.exception.InvalidStateTransitionException;
 import com.saas.billing.subscription_service.exception.PlanNotFoundException;
 import com.saas.billing.subscription_service.exception.SubscriptionAlreadyExistsException;
 import com.saas.billing.subscription_service.exception.SubscriptionNotFoundException;
+import com.saas.billing.subscription_service.messaging.event.PaymentSucceededEvent;
 import com.saas.billing.subscription_service.messaging.producer.SubscriptionEventPublisher;
 import com.saas.billing.subscription_service.repository.PlanRepository;
 import com.saas.billing.subscription_service.repository.SubscriptionRepository;
@@ -37,6 +38,7 @@ public class SubscriptionService {
     private final ProrataCalculatorService prorataCalculator;
     private final SubscriptionEventService eventService;
     private final SubscriptionEventPublisher eventPublisher;
+    private final PaymentClient paymentClient;
 
     public SubscriptionService(
             SubscriptionRepository subscriptionRepository,
@@ -45,7 +47,7 @@ public class SubscriptionService {
             SubscriptionStateMachineService stateMachine,
             ProrataCalculatorService prorataCalculator,
             SubscriptionEventService eventService,
-            SubscriptionEventPublisher eventPublisher) {
+            SubscriptionEventPublisher eventPublisher, PaymentClient paymentClient) {
         this.subscriptionRepository = subscriptionRepository;
         this.planRepository = planRepository;
         this.userCacheRepository = userCacheRepository;
@@ -53,13 +55,14 @@ public class SubscriptionService {
         this.prorataCalculator = prorataCalculator;
         this.eventService = eventService;
         this.eventPublisher = eventPublisher;
+        this.paymentClient = paymentClient;
     }
 
     // ════════════════════════════════════
     // SUBSCRIBE
     // new subscription or resubscription
     // ════════════════════════════════════
-    @Transactional
+    /*@Transactional
     public SubscriptionResponse subscribe(
             UUID userId,
             SubscribeRequest request) {
@@ -86,6 +89,67 @@ public class SubscriptionService {
 
         // cas 2 : first subscription
         return createNewSubscription(user, plan);
+    }*/
+
+    // Checkout
+
+    public CreatePaymentIntentResponse checkout(
+            UUID userId,
+            SubscribeRequest request
+    ) {
+        UserCache user = getUserCache(userId);
+        Plan plan = getActivePlan(request.planId());
+
+        if (subscriptionRepository.existsByUser(user)) {
+
+            Subscription existing = subscriptionRepository
+                    .findByUser(user)
+                    .orElseThrow();
+
+            if (existing.getStatus() != SubscriptionStatus.CANCELLED) {
+                throw new SubscriptionAlreadyExistsException(
+                        "You already have an active subscription"
+                );
+            }
+        }
+
+        CreatePaymentIntentRequest paymentRequest =
+                CreatePaymentIntentRequest.builder()
+                        .userId(userId)
+                        .planId(plan.getId())
+                        .amount(plan.getPrice())
+                        .currency("USD")
+                        .paymentType(PaymentType.INITIAL_SUBSCRIPTION)
+                        .build();
+
+        return paymentClient.createPaymentIntent(
+                paymentRequest,
+                userId.toString(),
+                user.getEmail()
+        );
+    }
+
+    // subscribe:
+    @Transactional
+    public void createSubscriptionAfterPayment(
+            PaymentSucceededEvent event
+    ) {
+
+        // récupérer le user local
+        UserCache user = getUserCache(event.userId());
+
+        // idempotence : si une subscription existe déjà, ignorer
+        if (subscriptionRepository.existsByUser(user)) {
+            return;
+        }
+
+        // récupérer le plan acheté
+        Plan plan = getActivePlan(event.planId());
+
+        // créer la subscription
+        // (enregistre la subscription, crée l'historique,
+        // publie subscription-created)
+        createNewSubscription(user, plan, event.planId());
     }
 
     // ════════════════════════════════════
@@ -321,7 +385,8 @@ public class SubscriptionService {
 
     private SubscriptionResponse createNewSubscription(
             UserCache user,
-            Plan plan) {
+            Plan plan,
+            UUID paymentId) {
 
         LocalDate today = LocalDate.now();
 
@@ -335,12 +400,12 @@ public class SubscriptionService {
 
         subscription = subscriptionRepository.save(subscription);
         eventService.recordSubscribed(subscription);
-        eventPublisher.publishSubscriptionCreated(subscription);
+        eventPublisher.publishSubscriptionCreated(subscription, paymentId);
 
         return toResponse(subscription);
     }
 
-    private SubscriptionResponse resubscribe(
+    /*private SubscriptionResponse resubscribe(
             Subscription existing,
             Plan plan) {
 
@@ -359,7 +424,7 @@ public class SubscriptionService {
         eventPublisher.publishSubscriptionCreated(existing);
 
         return toResponse(existing);
-    }
+    }*/
 
     private SubscriptionResponse applyUpgrade(
             Subscription subscription,

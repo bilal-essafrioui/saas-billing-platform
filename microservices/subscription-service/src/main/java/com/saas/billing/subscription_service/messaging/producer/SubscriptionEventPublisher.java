@@ -12,6 +12,8 @@ import com.saas.billing.subscription_service.messaging.event.SubscriptionCreated
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
 
+import java.util.UUID;
+
 @Component
 public class SubscriptionEventPublisher {
 
@@ -33,9 +35,11 @@ public class SubscriptionEventPublisher {
     //   pour envoyer l'email de bienvenue
     // ════════════════════════════════════
 
-    public void publishSubscriptionCreated(Subscription subscription) {
+    public void publishSubscriptionCreated(Subscription subscription, UUID paymentId) {
         SubscriptionCreatedEvent event = SubscriptionCreatedEvent.builder()
                 .subscriptionId(subscription.getId())
+                .paymentId(paymentId)
+                .paymentId(paymentId)
                 .userId(subscription.getUser().getUserId())
                 .userEmail(subscription.getUser().getEmail())
                 .planId(subscription.getPlan().getId())

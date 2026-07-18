@@ -16,6 +16,19 @@ public class BillingService {
         this.invoiceService = invoiceService;
     }
 
+    public void billFirstSubscription(
+            SubscriptionCreatedEvent event
+    ) {
+
+        invoiceService.createFirstInvoiceAfterPayment(
+                event.subscriptionId(),
+                event.paymentId(),
+                event.userId(),
+                event.userEmail(),
+                event.planPrice(),
+                event.startDate()
+        );
+    }
     // ════════════════════════════════════
     // FACTURER UN ABONNEMENT
     // appelé par le scheduler chaque nuit

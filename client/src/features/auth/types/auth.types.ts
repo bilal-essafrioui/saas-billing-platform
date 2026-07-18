@@ -40,3 +40,26 @@ export interface ApiError {
   message: string;
   timestamp: string;
 }
+
+// Email Verification types
+export interface VerifyEmailRequest {
+  email: string;
+  otp: string;
+}
+
+export interface VerifyEmailResponse {
+  tokenType: string;
+  expiresIn: number;
+  userId: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: "CUSTOMER" | "ADMIN";
+}
+
+export interface VerifyEmailApiError {
+  status: number;
+  error: string;
+  message: string;
+  timestamp: string;
+}

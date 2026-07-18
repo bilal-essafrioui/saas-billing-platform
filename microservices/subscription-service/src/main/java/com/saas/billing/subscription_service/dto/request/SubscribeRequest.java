@@ -7,8 +7,8 @@ import java.util.UUID;
 
 public record SubscribeRequest(
         @NotNull(message = "Plan ID is required")
-        UUID planId,
+        UUID planId
 
-        @NotNull(message = "Payment method ID is required")
-        String stripePaymentMethodId
+        /*@NotNull(message = "Payment method ID is required")
+        String stripePaymentMethodId*/
 ) {}

@@ -14,4 +14,6 @@ public class KafkaTopics {
     // topics que billing-service PUBLIE
     public static final String INVOICE_GENERATED =
             "invoice-generated";
+    public static final String FIRST_INVOICE_CREATED =
+            "first-invoice-created";
 }
