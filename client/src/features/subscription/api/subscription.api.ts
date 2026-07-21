@@ -1,5 +1,6 @@
 import client from "../../../service/http/client";
-import type { CheckoutResponse } from "../types/subscription.types";
+import type { CheckoutResponse, SubscriptionResponse, SubscriptionEventResponse } from "../types/subscription.types";
+import type {  } from "../types/subscription.types";
 
 export const getPlans = async () => {
   const response = await client.get("/subscriptions/plans");
@@ -15,4 +16,23 @@ export async function checkout(planId: string) {
   );
 
   return data;
+}
+
+
+export async function getMySubscription(): Promise<SubscriptionResponse> {
+  const response = await client.get<SubscriptionResponse>(
+    "/subscriptions/me"
+  );
+
+  return response.data;
+}
+
+
+
+export async function getMySubscriptionHistory(): Promise<SubscriptionEventResponse[]> {
+  const response = await client.get<SubscriptionEventResponse[]>(
+    "/subscriptions/me/history"
+  );
+
+  return response.data;
 }

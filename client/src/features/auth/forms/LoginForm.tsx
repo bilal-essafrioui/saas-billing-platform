@@ -3,6 +3,8 @@ import { Zap, Mail, Lock, Eye, EyeOff, AlertCircle, ArrowRight } from "lucide-re
 import { NavLink } from "react-router-dom";
 import { isEmpty, isValidEmail } from "../../../utils/validation";
 import { useLogin } from "../hooks/useLogin";
+import useAuth from "../../../app/hooks/useAuth";
+import {useNavigate} from "react-router-dom";
 import { toast } from "sonner";
 
 export default function LoginPage() {
@@ -13,6 +15,10 @@ export default function LoginPage() {
     useState<string | null>(null);
 
   const { signIn, loading, error } = useLogin();
+
+  const navigate = useNavigate();
+  const { checkAuth } = useAuth();
+  
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,7 +42,11 @@ export default function LoginPage() {
 
     if (!response) return;
 
+    await checkAuth();
+
     toast.success("Login successful!");
+
+    navigate("/dashboard");
   };
 
   return (

@@ -63,3 +63,13 @@ export interface VerifyEmailApiError {
   message: string;
   timestamp: string;
 }
+
+export interface User {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  role: "CUSTOMER" | "ADMIN";
+  lastLoginAt: string;
+  createdAt: string;
+}

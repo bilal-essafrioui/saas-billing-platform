@@ -2,6 +2,7 @@ package com.saas.billing.payment_service.controller;
 
 import com.saas.billing.payment_service.dto.response.PaymentMethodResponse;
 import com.saas.billing.payment_service.dto.response.PaymentResponse;
+import com.saas.billing.payment_service.security.AuthenticatedUser;
 import com.saas.billing.payment_service.service.PaymentMethodService;
 import com.saas.billing.payment_service.service.PaymentService;
 import org.springframework.http.ResponseEntity;
@@ -82,9 +83,13 @@ public class PaymentController {
     // ════════════════════════════════════
 
     private UUID extractUserId() {
-        Authentication auth = SecurityContextHolder
+        Authentication authentication = SecurityContextHolder
                 .getContext()
                 .getAuthentication();
-        return UUID.fromString((String) auth.getDetails());
+
+        AuthenticatedUser user =
+                (AuthenticatedUser) authentication.getPrincipal();
+
+        return UUID.fromString(user.userId());
     }
 }

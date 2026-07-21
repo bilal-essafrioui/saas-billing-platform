@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Zap, Check } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import useAuth from "../../../app/hooks/useAuth";
 
 /**
  * BillFlow "/payment/success" page.
@@ -9,20 +10,33 @@ import { useNavigate } from "react-router-dom";
  * the user skip the wait.
  */
 
-const REDIRECT_DELAY_SECONDS = 5;
+const REDIRECT_DELAY_SECONDS = 4;
 
 export default function PaymentSuccessPage() {
   const navigate = useNavigate();
   const [secondsLeft, setSecondsLeft] = useState(REDIRECT_DELAY_SECONDS);
+  const { checkAuth, loading } = useAuth();
 
   useEffect(() => {
     if (secondsLeft <= 0) {
-      navigate("/dashboard");
+      const redirect = async () => {
+        await checkAuth();
+        navigate("/dashboard");
+      };
+
+      redirect();
       return;
     }
+
     const timer = setTimeout(() => setSecondsLeft((s) => s - 1), 1000);
+
     return () => clearTimeout(timer);
-  }, [secondsLeft, navigate]);
+  }, [secondsLeft, navigate, checkAuth]);
+
+  const handleGoToDashboard = async () => {
+    await checkAuth();
+    navigate("/dashboard");
+  };
 
   const progress = ((REDIRECT_DELAY_SECONDS - secondsLeft) / REDIRECT_DELAY_SECONDS) * 100;
 
@@ -66,10 +80,11 @@ export default function PaymentSuccessPage() {
 
         <button
           type="button"
-          onClick={() => navigate("/dashboard")}
+          onClick={handleGoToDashboard}
+          disabled={loading}
           className="mt-6 w-full rounded-[var(--radius-button)] bg-[var(--primary)] py-3 text-sm font-semibold text-white hover:bg-[var(--primary-hover)]"
         >
-          Go to dashboard now
+          {loading ? "Redirecting..." : "Go to dashboard now"}
         </button>
       </div>
 

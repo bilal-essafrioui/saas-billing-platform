@@ -1,7 +1,7 @@
 import client from "../../../service/http/client";
 import type { RegisterRequest, RegisterResponse } from "../types/auth.types";
 import type { LoginRequest, LoginResponse } from "../types/auth.types";
-import  type {VerifyEmailRequest, VerifyEmailResponse } from "../types/auth.types";
+import  type {VerifyEmailRequest, VerifyEmailResponse, User } from "../types/auth.types";
 
 export async function login(
   request: LoginRequest
@@ -37,6 +37,12 @@ export async function verifyEmail(
     request
   );
 
+  return response.data;
+}
+
+// me 
+export async function me(): Promise<User> {
+  const response = await client.get<User>("/auth/me");
   return response.data;
 }
 

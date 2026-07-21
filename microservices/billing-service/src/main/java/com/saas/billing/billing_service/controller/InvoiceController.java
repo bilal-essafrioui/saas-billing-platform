@@ -1,6 +1,7 @@
 package com.saas.billing.billing_service.controller;
 
 import com.saas.billing.billing_service.dto.response.InvoiceResponse;
+import com.saas.billing.billing_service.security.AuthenticatedUser;
 import com.saas.billing.billing_service.service.InvoiceService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -29,7 +30,9 @@ public class InvoiceController {
     @GetMapping("/me")
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<List<InvoiceResponse>> getMyInvoices() {
+
         UUID userId = extractUserId();
+
         return ResponseEntity.ok(
                 invoiceService.getMyInvoices(userId)
         );
@@ -66,9 +69,13 @@ public class InvoiceController {
     // ════════════════════════════════════
 
     private UUID extractUserId() {
-        Authentication auth = SecurityContextHolder
+        Authentication authentication = SecurityContextHolder
                 .getContext()
                 .getAuthentication();
-        return UUID.fromString((String) auth.getDetails());
+
+        AuthenticatedUser user =
+                (AuthenticatedUser) authentication.getPrincipal();
+
+        return UUID.fromString(user.userId());
     }
 }
