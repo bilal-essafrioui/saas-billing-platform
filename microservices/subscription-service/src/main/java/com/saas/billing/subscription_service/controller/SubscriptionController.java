@@ -103,10 +103,21 @@ public class SubscriptionController {
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<SubscriptionResponse> changePlan(
             @Valid @RequestBody ChangePlanRequest request) {
-
         UUID userId = extractUserId();
         return ResponseEntity.ok(
                 subscriptionService.confirmChangePlan(userId, request)
+        );
+    }
+
+    // cancel pending subscription
+    @PostMapping("/me/cancel-pending-change")
+    @PreAuthorize("hasRole('CUSTOMER')")
+    public ResponseEntity<SubscriptionResponse> cancelPendingChange() {
+
+        UUID userId = extractUserId();
+
+        return ResponseEntity.ok(
+                subscriptionService.cancelPendingChange(userId)
         );
     }
 

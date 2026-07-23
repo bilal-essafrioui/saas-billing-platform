@@ -1,6 +1,8 @@
 package com.saas.billing.payment_service.controller;
 
+import com.saas.billing.payment_service.dto.request.ChargePaymentRequest;
 import com.saas.billing.payment_service.dto.request.CreatePaymentIntentRequest;
+import com.saas.billing.payment_service.dto.response.ChargePaymentResponse;
 import com.saas.billing.payment_service.dto.response.CreatePaymentIntentResponse;
 import com.saas.billing.payment_service.service.PaymentService;
 import jakarta.validation.Valid;
@@ -44,5 +46,16 @@ public class InternalPaymentController {
                     .internalServerError()
                     .build();
         }
+    }
+
+    @PostMapping("/charge")
+    public ResponseEntity<ChargePaymentResponse> chargePayment(
+            @Valid @RequestBody ChargePaymentRequest request
+    ) {
+        System.out.println("6. Payment controller reached");
+        ChargePaymentResponse response =
+                paymentService.chargePayment(request);
+
+        return ResponseEntity.ok(response);
     }
 }

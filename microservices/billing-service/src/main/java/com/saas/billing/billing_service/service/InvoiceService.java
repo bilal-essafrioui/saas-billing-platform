@@ -6,6 +6,7 @@ import com.saas.billing.billing_service.domain.enums.InvoiceType;
 import com.saas.billing.billing_service.dto.response.InvoiceResponse;
 import com.saas.billing.billing_service.exception.InvoiceNotFoundException;
 import com.saas.billing.billing_service.messaging.producer.BillingEventPublisher;
+import com.saas.billing.billing_service.messaging.producer.ProrationInvoiceEventPublisher;
 import com.saas.billing.billing_service.repository.InvoiceRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -150,7 +151,8 @@ public class InvoiceService {
                 .userId(userId)
                 .userEmail(userEmail)
                 .amount(amount)
-                .status(InvoiceStatus.PENDING)
+                .status(InvoiceStatus.PAID)
+                .paidAt(LocalDateTime.now())
                 .type(InvoiceType.PRORATION)
                 .idempotencyKey(idempotencyKey)
                 .billingPeriodStart(upgradeDate)
@@ -159,8 +161,6 @@ public class InvoiceService {
 
         invoice = invoiceRepository.save(invoice);
 
-        // publish to Kafka
-        eventPublisher.publishInvoiceGenerated(invoice);
 
         return invoice;
     }

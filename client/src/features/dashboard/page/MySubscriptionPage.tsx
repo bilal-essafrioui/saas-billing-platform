@@ -1,8 +1,16 @@
+import { useState } from "react";
 import { AlertTriangle } from "lucide-react";
 import { useMySubscription } from "../../subscription/hooks/useMySubscription";
 import SubscriptionEvents from "../../subscription/components/SubscriptionEvents";
 import Spinner from "../../../components/ui/Spinner";
 import { toast } from "sonner";
+import Plans from "../../subscription/components/Plans";
+import { usePreviewPlanChange } from "../../subscription/hooks/usePreviewPlanChange";
+import { X } from "lucide-react";
+import PlanChangePreviewModal from "../../subscription/components/PlanChangePreviewModal";
+import { useChangePlan } from "../../subscription/hooks/useChangePlan";
+import { useCancelPendingChange } from "../../subscription/hooks/useCancelPendingChange";
+
 /**
  * BillFlow "My Subscription" page — main content only.
  * Payment method card intentionally omitted (as requested), so the
@@ -39,7 +47,13 @@ function Badge({ bg, text, border, label }: { bg: string; text: string; border: 
 
 
 export default function MySubscriptionPage() {
-  const { subscription, loading, error } = useMySubscription();
+  const [showPlans, setShowPlans] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
+  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
+  const { subscription, loading, error, refetch } = useMySubscription();
+  const { preview, loading: previewLoading, error: previewError, fetchPreview,} = usePreviewPlanChange();
+  const { confirmChangePlan, loading: changeLoading, error: changeError,} = useChangePlan();
+  const { cancelChange, loading: cancelLoading, error: cancelError,} = useCancelPendingChange();
 
   if (loading) return <Spinner />;
 
@@ -53,20 +67,72 @@ export default function MySubscriptionPage() {
     })
   : "N/A";
 
-const renewalDate = subscription?.nextRenewalDate
-  ? new Date(subscription.nextRenewalDate).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    })
-  : "N/A";
+  const handlePreview = async (newPlanId: string) => {
+    try {
+      setSelectedPlanId(newPlanId);
+
+      const response = await fetchPreview({ newPlanId });
+
+      setShowPlans(false);
+      setShowPreview(true);
+
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleConfirmChange = async () => {
+    if (!selectedPlanId) return;
+
+    try {
+      await confirmChangePlan({
+        newPlanId: selectedPlanId,
+      });
+
+      await refetch();
+
+      setShowPreview(false);
+      setSelectedPlanId(null);
+
+      toast.success("Subscription updated successfully.");
+    } catch {
+      // Le hook a déjà stocké l'erreur.
+    }
+  };
+
+  const handleCancelPendingChange = async () => {
+
+    try {
+
+      await cancelChange();
+
+      await refetch();
+
+      toast.success(
+        "Scheduled downgrade cancelled successfully."
+      );
+
+    } catch {
+      if (cancelError) {
+        toast.error(cancelError.message);
+      }
+    }
+  };
+
+  const renewalDate = subscription?.nextRenewalDate
+    ? new Date(subscription.nextRenewalDate).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      })
+    : "N/A";
 
   return (
     <div>
       <h1 className="text-[28px] font-semibold text-[var(--text-primary)]">My Subscription</h1>
 
       {/* Warning banner */}
-      {subscription?.pendingPlanName && (
+      {subscription?.pendingPlanId && (
         <div className="mt-5 flex items-center gap-3 rounded-[var(--radius-card)] border border-[var(--warning-border)] bg-transparent px-4 py-3">
           <AlertTriangle className="h-4 w-4 shrink-0 text-[var(--warning-text)]" />
 
@@ -83,6 +149,16 @@ const renewalDate = subscription?.nextRenewalDate
               }
             )}
           </span>
+          <button
+            type="button"
+            onClick={handleCancelPendingChange}
+            disabled={cancelLoading}
+            className="ml-auto rounded-[var(--radius-button)] border border-[var(--warning-border)] px-3 py-1.5 text-xs font-medium text-[var(--warning-text)] hover:bg-[var(--warning-bg)] disabled:opacity-60 cursor-pointer"
+          >
+            {cancelLoading
+              ? "Cancelling..."
+              : "Cancel Scheduled Downgrade"}
+          </button>
         </div>
       )}
 
@@ -107,10 +183,11 @@ const renewalDate = subscription?.nextRenewalDate
               Cancel Subscription
             </button>
             <button
-              type="button"
-              className="rounded-[var(--radius-button)] bg-[var(--primary)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--primary-hover)] cursor-pointer"
+                type="button"
+                onClick={() => setShowPlans(true)}
+                className="rounded-[var(--radius-button)] bg-[var(--primary)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--primary-hover)] cursor-pointer"
             >
-              Change Plan
+                Change Plan
             </button>
           </div>
         </div>
@@ -142,7 +219,50 @@ const renewalDate = subscription?.nextRenewalDate
 
       {/* Subscription events history */}
       <SubscriptionEvents />
+
+      {/* The modal */}
+      {showPlans && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+          onClick={() => setShowPlans(false)}
+        >
+          <div
+            className="relative max-h-[90vh] w-full max-w-5xl overflow-y-auto rounded-[var(--radius-card)] border border-[var(--border)] bg-[var(--bg-page)] p-8 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setShowPlans(false)}
+              aria-label="Close"
+              className="absolute right-6 top-6 rounded-full p-2 text-[var(--text-muted)] hover:bg-[var(--bg-card-hover)] hover:text-[var(--text-primary)] cursor-pointer"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            <h2 className="text-2xl font-semibold text-[var(--text-primary)]">Change your plan</h2>
+            <p className="mt-1 text-sm text-[var(--text-secondary)]">
+              You're currently on the <strong>{subscription?.planName}</strong> plan.
+              Choose a new plan below — the change will be reflected on your next billing cycle.
+            </p>
+
+            <Plans
+              mode="change"
+              currentPlanId={subscription?.planId}
+              onPlanSelected={handlePreview}
+            />
+          </div>
+        </div>
+      )}
       
+      {showPreview && preview && (
+        <PlanChangePreviewModal
+          preview={preview}
+          loading={previewLoading}
+          confirmLoading={changeLoading}
+          onCancel={() => setShowPreview(false)}
+          onConfirm={handleConfirmChange}
+        />
+      )}
     </div>
   );
 }

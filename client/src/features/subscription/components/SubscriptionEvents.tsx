@@ -23,6 +23,7 @@ const eventTypeMeta: Record<SubscriptionEventType, { icon: LucideIcon; color: st
   UPGRADED: { icon: ArrowUpCircle, color: "var(--success-text)", label: "Upgraded" },
   DOWNGRADE_SCHEDULED: { icon: Clock, color: "var(--warning-text)", label: "Downgrade Scheduled" },
   DOWNGRADE_APPLIED: { icon: ArrowDownCircle, color: "var(--warning-text)", label: "Downgrade Applied" },
+  DOWNGRADE_CANCELLED: { icon: XCircle, color: "var(--primary)", label: "Downgrade Cancelled" },
   STATUS_CHANGED: { icon: RefreshCw, color: "var(--primary)", label: "Status Changed" },
   CANCELLED: { icon: XCircle, color: "var(--text-muted)", label: "Cancelled" },
   RESUBSCRIBED: { icon: RotateCcw, color: "var(--success-text)", label: "Resubscribed" },

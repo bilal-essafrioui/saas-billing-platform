@@ -4,7 +4,9 @@ import com.saas.billing.payment_service.domain.entity.Payment;
 import com.saas.billing.payment_service.domain.entity.PaymentMethod;
 import com.saas.billing.payment_service.domain.enums.PaymentStatus;
 import com.saas.billing.payment_service.domain.enums.PaymentType;
+import com.saas.billing.payment_service.dto.request.ChargePaymentRequest;
 import com.saas.billing.payment_service.dto.request.CreatePaymentIntentRequest;
+import com.saas.billing.payment_service.dto.response.ChargePaymentResponse;
 import com.saas.billing.payment_service.dto.response.CreatePaymentIntentResponse;
 import com.saas.billing.payment_service.dto.response.PaymentResponse;
 import com.saas.billing.payment_service.exception.PaymentMethodNotFoundException;
@@ -251,6 +253,111 @@ public class PaymentService {
                     attemptNumber
             );
         }
+    }
+
+    //
+    @Transactional
+    public ChargePaymentResponse chargePayment(
+            ChargePaymentRequest request
+    ) {
+        System.out.println("7. chargePayment");
+        PaymentMethod pm = paymentMethodService
+                .getPaymentMethodEntity(request.userId());
+
+        String idempotencyKey =
+                request.subscriptionId()
+                        + "_upgrade_"
+                        + request.planId();
+
+        if (paymentRepository.existsByIdempotencyKey(idempotencyKey)) {
+
+            Payment existing = paymentRepository
+                    .findByIdempotencyKey(idempotencyKey)
+                    .orElseThrow();
+
+            return new ChargePaymentResponse(
+                    existing.getId(),
+                    existing.getStatus(),
+                    "Payment already processed."
+            );
+        }
+
+        PaymentIntent paymentIntent;
+
+        try {
+            paymentIntent =
+                    stripeService.createOffSessionPaymentIntent(
+                            request.amount(),
+                            request.currency(),
+                            pm.getStripeCustomerId(),
+                            pm.getStripePaymentMethodId(),
+                            idempotencyKey
+                    );
+        } catch (StripeException e) {
+
+            Payment failedPayment = Payment.builder()
+                    .userId(request.userId())
+                    .userEmail(request.userEmail())
+                    .subscriptionId(request.subscriptionId())
+                    .planId(request.planId())
+                    .paymentMethodId(pm.getId())
+                    .amount(request.amount())
+                    .currency(request.currency())
+                    .paymentType(request.paymentType())
+                    .status(PaymentStatus.FAILED)
+                    .failureReason(e.getMessage())
+                    .idempotencyKey(idempotencyKey)
+                    .attemptNumber(1)
+                    .build();
+
+            failedPayment = paymentRepository.save(failedPayment);
+
+            return new ChargePaymentResponse(
+                    failedPayment.getId(),
+                    PaymentStatus.FAILED,
+                    e.getMessage()
+            );
+        }
+
+        System.out.println("PaymentIntent status = " + paymentIntent.getStatus());
+
+        boolean success =
+                "succeeded".equals(paymentIntent.getStatus());
+
+        Payment payment = Payment.builder()
+                .userId(request.userId())
+                .userEmail(request.userEmail())
+                .subscriptionId(request.subscriptionId())
+                .planId(request.planId())
+                .paymentMethodId(pm.getId())
+                .amount(request.amount())
+                .currency(request.currency())
+                .paymentType(request.paymentType())
+                .status(success
+                        ? PaymentStatus.SUCCEEDED
+                        : PaymentStatus.FAILED)
+                .paidAt(success ? LocalDateTime.now() : null)
+                .failureReason(success ? null : paymentIntent.getStatus())
+                .stripePaymentIntentId(paymentIntent.getId())
+                .idempotencyKey(idempotencyKey)
+                .attemptNumber(1)
+                .build();
+
+        payment = paymentRepository.save(payment);
+
+        if (success) {
+            return new ChargePaymentResponse(
+                    payment.getId(),
+                    PaymentStatus.SUCCEEDED,
+                    "Payment completed successfully"
+            );
+        }
+
+        return new ChargePaymentResponse(
+                payment.getId(),
+                PaymentStatus.FAILED,
+                "Payment failed: " + paymentIntent.getStatus()
+        );
     }
 
     // ════════════════════════════════════

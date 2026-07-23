@@ -16,4 +16,7 @@ public class KafkaTopics {
             "invoice-generated";
     public static final String FIRST_INVOICE_CREATED =
             "first-invoice-created";
+
+    public static final String PRORATION_INVOICE_CREATED =
+            "proration-invoice-created";
 }

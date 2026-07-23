@@ -157,6 +157,24 @@ public class SubscriptionEventService {
         );
     }
 
+    // DOWNGRADE_CANCELLED
+    @Transactional
+    public void recordDowngradeCancelled(
+            Subscription subscription,
+            Plan cancelledPlan
+    ) {
+        record(
+                subscription,
+                SubscriptionEventType.DOWNGRADE_CANCELLED,
+                subscription.getPlan(),
+                cancelledPlan,
+                SubscriptionStatus.ACTIVE,
+                SubscriptionStatus.ACTIVE,
+                null,
+                "Scheduled downgrade cancelled"
+        );
+    }
+
     // ════════════════════════════════════
     // GET HISTORY
     // ════════════════════════════════════

@@ -69,6 +69,23 @@ public class GlobalExceptionHandler {
     }
 
     // ════════════════════════════════════
+    // PAYMENT FAILED → 402
+    // ════════════════════════════════════
+
+    @ExceptionHandler(PaymentFailedException.class)
+    public ResponseEntity<ErrorResponse> handlePaymentFailed(
+            PaymentFailedException ex) {
+
+        return ResponseEntity
+                .status(HttpStatus.PAYMENT_REQUIRED)
+                .body(ErrorResponse.of(
+                        402,
+                        "PAYMENT_FAILED",
+                        ex.getMessage()
+                ));
+    }
+
+    // ════════════════════════════════════
     // USER NOT FOUND → 404
     // ════════════════════════════════════
 
@@ -81,6 +98,23 @@ public class GlobalExceptionHandler {
                         ex.getMessage()));
     }
 
+    // ════════════════════════════════════
+    // BUSINESS RULE VIOLATION → 400
+    // ex: no pending downgrade found
+    // ════════════════════════════════════
+
+        @ExceptionHandler(BusinessException.class)
+        public ResponseEntity<ErrorResponse> handleBusinessException(
+                BusinessException ex) {
+
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(ErrorResponse.of(
+                            400,
+                            "BUSINESS_ERROR",
+                            ex.getMessage()
+                    ));
+        }
     // ════════════════════════════════════
     // ILLEGAL ARGUMENT → 400
     // ex: même plan sélectionné

@@ -3,6 +3,7 @@ package com.saas.billing.billing_service.service;
 import com.saas.billing.billing_service.domain.entity.Invoice;
 import com.saas.billing.billing_service.messaging.event.SubscriptionCreatedEvent;
 import com.saas.billing.billing_service.messaging.event.PlanChangedEvent;
+import com.saas.billing.billing_service.messaging.event.UpgradePaymentSucceededEvent;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -56,12 +57,14 @@ public class BillingService {
     // publie PlanChanged avec type UPGRADE
     // ════════════════════════════════════
 
-    public void billUpgrade(PlanChangedEvent event) {
-        if (!"UPGRADE".equals(event.changeType())) return;
+    public void billUpgrade(
+            PlanChangedEvent event) {
 
         LocalDate upgradeDate = event.effectiveDate();
+
         LocalDate periodEnd = upgradeDate
                 .withDayOfMonth(upgradeDate.lengthOfMonth());
+
 
         invoiceService.createProrataInvoice(
                 event.subscriptionId(),

@@ -4,17 +4,16 @@ import com.saas.billing.subscription_service.client.PaymentClient;
 import com.saas.billing.subscription_service.domain.entity.Plan;
 import com.saas.billing.subscription_service.domain.entity.Subscription;
 import com.saas.billing.subscription_service.domain.entity.UserCache;
+import com.saas.billing.subscription_service.domain.enums.PaymentStatus;
 import com.saas.billing.subscription_service.domain.enums.PaymentType;
 import com.saas.billing.subscription_service.domain.enums.SubscriptionEventType;
 import com.saas.billing.subscription_service.domain.enums.SubscriptionStatus;
 import com.saas.billing.subscription_service.dto.request.ChangePlanRequest;
+import com.saas.billing.subscription_service.dto.request.ChargePaymentRequest;
 import com.saas.billing.subscription_service.dto.request.CreatePaymentIntentRequest;
 import com.saas.billing.subscription_service.dto.request.SubscribeRequest;
 import com.saas.billing.subscription_service.dto.response.*;
-import com.saas.billing.subscription_service.exception.InvalidStateTransitionException;
-import com.saas.billing.subscription_service.exception.PlanNotFoundException;
-import com.saas.billing.subscription_service.exception.SubscriptionAlreadyExistsException;
-import com.saas.billing.subscription_service.exception.SubscriptionNotFoundException;
+import com.saas.billing.subscription_service.exception.*;
 import com.saas.billing.subscription_service.messaging.event.PaymentSucceededEvent;
 import com.saas.billing.subscription_service.messaging.producer.SubscriptionEventPublisher;
 import com.saas.billing.subscription_service.repository.PlanRepository;
@@ -220,11 +219,76 @@ public class SubscriptionService {
                 .calculate(subscription, newPlan);
 
         if ("UPGRADE".equals(prorata.changeType())) {
-            return applyUpgrade(subscription, newPlan,
-                    previousPlan, prorata);
+            ChargePaymentRequest paymentRequest =
+                    new ChargePaymentRequest(
+                            userId,
+                            user.getEmail(),
+                            subscription.getId(),
+                            newPlan.getId(),
+                            prorata.prorataAmount(),
+                            "USD",
+                            PaymentType.UPGRADE_PRORATION
+                    );
+
+            ChargePaymentResponse paymentResponse =
+                    paymentClient.chargePayment(paymentRequest);
+
+            if(paymentResponse.status() == PaymentStatus.SUCCEEDED) {
+                subscription.setPendingPlanId(null);
+                subscription.setPendingPlanEffectiveDate(null);
+
+                return applyUpgrade(
+                        subscription,
+                        newPlan,
+                        previousPlan,
+                        prorata
+                );
+
+            }
+            throw new PaymentFailedException(
+                    paymentResponse.message()
+            );
+
         } else {
             return applyDowngrade(subscription, newPlan);
         }
+    }
+
+    // cancel downgrade
+    @Transactional
+    public SubscriptionResponse cancelPendingChange(UUID userId) {
+
+        UserCache user = getUserCache(userId);
+        Subscription subscription = getActiveSubscription(user);
+
+        if (subscription.getPendingPlanId() == null) {
+            throw new BusinessException(
+                    "No pending downgrade found."
+            );
+        }
+
+        Plan pendingPlan = planRepository
+                .findById(subscription.getPendingPlanId())
+                .orElseThrow(() ->
+                        new BusinessException("Pending plan not found.")
+                );
+
+        subscription.setPendingPlanId(null);
+        subscription.setPendingPlanEffectiveDate(null);
+
+        subscriptionRepository.save(subscription);
+
+        eventService.recordDowngradeCancelled(
+                subscription,
+                pendingPlan
+        );
+
+        /*eventPublisher.publishDowngradeCancelled(
+                subscription,
+                pendingPlan
+        );*/
+
+        return toResponse(subscription);
     }
 
     // ════════════════════════════════════
@@ -492,6 +556,13 @@ public class SubscriptionService {
     }
 
     private SubscriptionResponse toResponse(Subscription s) {
+        String pendingPlanName = null;
+        if (s.getPendingPlanId() != null) {
+            pendingPlanName = planRepository
+                    .findById(s.getPendingPlanId())
+                    .map(Plan::getName)
+                    .orElse(null);
+        }
         return SubscriptionResponse.builder()
                 .id(s.getId())
                 .userId(s.getUser().getUserId())
@@ -506,6 +577,7 @@ public class SubscriptionService {
                 .nextRenewalDate(s.getNextRenewalDate())
                 .cancelledAt(s.getCancelledAt())
                 .pendingPlanId(s.getPendingPlanId())
+                .pendingPlanName(pendingPlanName)
                 .pendingPlanEffectiveDate(s.getPendingPlanEffectiveDate())
                 .createdAt(s.getCreatedAt())
                 .updatedAt(s.getUpdatedAt())

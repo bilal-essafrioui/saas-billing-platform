@@ -51,6 +51,7 @@ export type SubscriptionEventType =
   | "SUBSCRIBED"
   | "UPGRADED"
   | "DOWNGRADE_SCHEDULED"
+  | "DOWNGRADE_CANCELLED"
   | "DOWNGRADE_APPLIED"
   | "STATUS_CHANGED"
   | "CANCELLED"
@@ -83,4 +84,36 @@ export interface SubscriptionHistoryErrorResponse {
   error: string;
   message: string;
   timestamp: string;
+}
+
+export type PlanChangeType = "UPGRADE" | "DOWNGRADE";
+
+export interface ChangePlanRequest {
+  newPlanId: string;
+}
+
+export interface ProrataResponse {
+  // Current plan
+  currentPlanId: string;
+  currentPlanName: string;
+  currentPlanPrice: number;
+
+  // New plan
+  newPlanId: string;
+  newPlanName: string;
+  newPlanPrice: number;
+
+  // Proration
+  remainingDays: number;
+  totalDays: number;
+  prorataAmount: number;
+
+  // UPGRADE | DOWNGRADE
+  changeType: PlanChangeType;
+
+  // ISO date string (null for upgrades)
+  effectiveDate: string | null;
+
+  // Amount to pay immediately (null for downgrades)
+  amountToPayNow: number | null;
 }
