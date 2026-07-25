@@ -14,4 +14,10 @@ public class KafkaTopics {
     public static final String PLAN_CHANGED = "plan-changed";
     public static final String SUBSCRIPTION_STATUS_UPDATED =
             "subscription-status-updated";
+
+    // ════════════════════════════════════
+    // NOUVEAUX TOPICS SCHEDULER
+    // ════════════════════════════════════
+    public static final String SUBSCRIPTION_DUE = "subscription-due";
+    public static final String DOWNGRADE_APPLIED = "downgrade-applied";
 }

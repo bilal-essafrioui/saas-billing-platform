@@ -25,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -139,6 +140,12 @@ public class SubscriptionService {
 
         // idempotence : si une subscription existe déjà, ignorer
         if (subscriptionRepository.existsByUser(user)) {
+            Subscription subscription =
+                    subscriptionRepository.findByUser(user).orElseThrow();
+
+            subscription.setNextRenewalDate(
+                    subscription.getNextRenewalDate().plusMonths(1)
+            );
             return;
         }
 
@@ -359,7 +366,7 @@ public class SubscriptionService {
 
     // ════════════════════════════════════
     // APPLY PENDING DOWNGRADES (SCHEDULER)
-    // appelé chaque nuit par billing-service
+    // appelé chaque nuit par SCHEDULER
     // ════════════════════════════════════
 
     @Transactional
@@ -391,7 +398,54 @@ public class SubscriptionService {
                     null,
                     "Downgrade applied"
             );
+
+            // publish on Kafka → notification-service
+            // sends email "Your plan has been changed"
+            eventPublisher.publishDowngradeApplied(
+                    subscription, previousPlan, newPlan
+            );
         }
+    }
+
+    // processSubscriptionsDueToday()
+    public void processSubscriptionsDueToday(){
+        List<Subscription> subscriptionsDue =
+                subscriptionRepository.findByStatusAndNextRenewalDate(
+                        SubscriptionStatus.ACTIVE,
+                        LocalDate.now()
+                );
+
+        System.out.println(
+                "Found " + subscriptionsDue.size()
+                        + " subscriptions to bill"
+        );
+
+        for (Subscription subscription : subscriptionsDue) {
+            try {
+                // publier sur Kafka
+                // billing-service va générer la facture
+                eventPublisher.publishSubscriptionDue(subscription);
+
+                System.out.println(
+                        "Published subscription-due for : "
+                                + subscription.getId()
+                );
+
+            } catch (Exception e) {
+                System.err.println(
+                        "Error publishing subscription-due for "
+                                + subscription.getId()
+                                + " : " + e.getMessage()
+                );
+            }
+        }
+    }
+
+    // called by scheduler
+    @Transactional
+    public void processDailyRenewals() {
+        applyPendingDowngrades();
+        processSubscriptionsDueToday();
     }
 
     // ════════════════════════════════════

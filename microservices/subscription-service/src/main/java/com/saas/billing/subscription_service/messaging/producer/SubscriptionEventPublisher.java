@@ -5,13 +5,11 @@ import com.saas.billing.subscription_service.domain.entity.Plan;
 import com.saas.billing.subscription_service.domain.entity.Subscription;
 import com.saas.billing.subscription_service.dto.response.ProrataResponse;
 import com.saas.billing.subscription_service.messaging.KafkaTopics;
-import com.saas.billing.subscription_service.messaging.event.DowngradeScheduledEvent;
-import com.saas.billing.subscription_service.messaging.event.PlanChangedEvent;
-import com.saas.billing.subscription_service.messaging.event.SubscriptionCancelledEvent;
-import com.saas.billing.subscription_service.messaging.event.SubscriptionCreatedEvent;
+import com.saas.billing.subscription_service.messaging.event.*;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDate;
 import java.util.UUID;
 
 @Component
@@ -120,6 +118,48 @@ public class SubscriptionEventPublisher {
                 .build();
 
         publish(KafkaTopics.DOWNGRADE_SCHEDULED, event);
+    }
+
+    // ════════════════════════════════════
+    // SUBSCRIPTION DUE ← NOUVEAU
+    // publié par le scheduler chaque nuit
+    // billing-service écoute
+    // ════════════════════════════════════
+
+    public void publishSubscriptionDue(Subscription subscription) {
+        SubscriptionDueEvent event = new SubscriptionDueEvent(
+                subscription.getId(),
+                subscription.getUser().getUserId(),
+                subscription.getUser().getEmail(),
+                subscription.getPlan().getId(),
+                subscription.getPlan().getName(),
+                subscription.getPlan().getPrice(),
+                LocalDate.now(),
+                subscription.getNextRenewalDate()
+        );
+        publish(KafkaTopics.SUBSCRIPTION_DUE, event);
+    }
+
+    // ════════════════════════════════════
+    // DOWNGRADE APPLIED ← NOUVEAU
+    // publié après application du downgrade
+    // ════════════════════════════════════
+
+    public void publishDowngradeApplied(
+            Subscription subscription,
+            Plan previousPlan,
+            Plan newPlan) {
+        DowngradeAppliedEvent event = new DowngradeAppliedEvent(
+                subscription.getId(),
+                subscription.getUser().getUserId(),
+                subscription.getUser().getEmail(),
+                previousPlan.getName(),
+                previousPlan.getPrice(),
+                newPlan.getName(),
+                newPlan.getPrice(),
+                LocalDate.now()
+        );
+        publish(KafkaTopics.DOWNGRADE_APPLIED, event);
     }
 
     // ════════════════════════════════════

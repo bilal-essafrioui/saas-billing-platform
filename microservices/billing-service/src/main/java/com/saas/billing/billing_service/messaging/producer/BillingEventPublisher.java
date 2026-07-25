@@ -47,11 +47,12 @@ public class BillingEventPublisher {
     //   pour envoyer l'email "facture disponible"
     // ════════════════════════════════════
 
-    public void publishInvoiceGenerated(Invoice invoice) {
+    public void publishInvoiceGenerated(Invoice invoice, UUID planId) {
         InvoiceGeneratedEvent event = InvoiceGeneratedEvent.builder()
                 .invoiceId(invoice.getId())
                 .subscriptionId(invoice.getSubscriptionId())
                 .userId(invoice.getUserId())
+                .planId(planId)
                 .userEmail(invoice.getUserEmail())
                 .amount(invoice.getAmount())
                 .type(invoice.getType())

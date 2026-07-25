@@ -45,6 +45,7 @@ public class InvoiceService {
             UUID subscriptionId,
             UUID userId,
             String userEmail,
+            UUID planId,
             BigDecimal amount,
             LocalDate billingDate) {
 
@@ -74,7 +75,7 @@ public class InvoiceService {
         invoice = invoiceRepository.save(invoice);
 
         // publish to Kafka → payment-service va déclencher le paiement
-        eventPublisher.publishInvoiceGenerated(invoice);
+        eventPublisher.publishInvoiceGenerated(invoice, planId);
 
         return invoice;
     }

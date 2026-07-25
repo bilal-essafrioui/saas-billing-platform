@@ -43,10 +43,10 @@ public class InvoiceEventConsumer {
                     event.invoiceId(),
                     event.subscriptionId(),
                     event.userId(),
-                    null, // planId pas dans l'event → à ajouter
+                    event.planId(), // planId pas dans l'event → à ajouter
                     event.userEmail(),
                     event.amount(),
-                    "eur",
+                    "USD",
                     1 // premier essai
             );
 

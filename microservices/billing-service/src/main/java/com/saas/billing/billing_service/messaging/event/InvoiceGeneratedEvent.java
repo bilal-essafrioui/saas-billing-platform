@@ -12,6 +12,7 @@ public record InvoiceGeneratedEvent(
         UUID invoiceId,
         UUID subscriptionId,
         UUID userId,
+        UUID planId,
         String userEmail,
         BigDecimal amount,
         InvoiceType type,

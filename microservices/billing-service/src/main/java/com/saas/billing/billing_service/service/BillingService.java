@@ -39,6 +39,7 @@ public class BillingService {
             java.util.UUID subscriptionId,
             java.util.UUID userId,
             String userEmail,
+            java.util.UUID planId,
             java.math.BigDecimal amount,
             LocalDate billingDate) {
 
@@ -46,6 +47,7 @@ public class BillingService {
                 subscriptionId,
                 userId,
                 userEmail,
+                planId,
                 amount,
                 billingDate
         );
