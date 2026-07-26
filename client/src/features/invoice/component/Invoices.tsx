@@ -2,7 +2,8 @@ import { FileText, AlertCircle, ChevronDown, Download, RotateCw, Eye } from "luc
 import type { InvoiceStatus, InvoicesType, InvoiceType } from "../types/invoice.types";
 import { useMyInvoices } from "../hooks/useMyInvoices";
 import { toast } from "sonner";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import type { FilterInvoicesRequest } from "../types/filterInvoices.types";
 
 const statusStyles: Record<InvoiceStatus, { text: string }> = {
   PENDING: { text: "var(--warning-text)" },
@@ -32,15 +33,26 @@ function TypeBadge({ type }: { type: InvoicesType }) {
 }
 
 export default function Invoices(){
-    const { invoices, loading, error, fetchInvoices } = useMyInvoices();
+    const { invoices, loading, error, fetchInvoices, filterInvoices } = useMyInvoices();
+    const [status, setStatus] = useState<FilterInvoicesRequest["status"]>(null);
+
+    const [period, setPeriod] = useState<FilterInvoicesRequest["period"]>(
+      "ALL_TIME"
+    );
     const isInvoiceType = (
         type: InvoiceType | InvoicesType
         ): type is InvoicesType =>
         type === "RECURRING" || type === "PRORATION";
 
-    useEffect(() => {
+    /*useEffect(() => {
         fetchInvoices();
-    }, []);
+    }, []);*/
+    useEffect(() => {
+        filterInvoices({
+            status,
+            period,
+        });
+    }, [status, period]);
     if (loading) return;
 
     if (error) return toast.error(error.message);
@@ -56,25 +68,39 @@ export default function Invoices(){
           <div className="flex items-center gap-2">
             <div className="relative">
               <select
+                value={status ?? ""}
+                onChange={(e) =>
+                    setStatus(
+                        e.target.value === ""
+                            ? null
+                            : e.target.value as FilterInvoicesRequest["status"]
+                    )
+                }
                 className="appearance-none rounded-[var(--radius-input)] border border-[var(--border)] bg-[var(--bg-input)] py-2 pl-3 pr-8 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--border-active)]"
-              >
-                <option>All statuses</option>
-                <option>Pending</option>
-                <option>Paid</option>
-                <option>Failed</option>
-              </select>
+            >
+                <option value="">All statuses</option>
+                <option value="PENDING">Pending</option>
+                <option value="PAID">Paid</option>
+                <option value="FAILED">Failed</option>
+            </select>
               <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--text-muted)]" />
             </div>
 
             <div className="relative">
               <select
+                value={period}
+                onChange={(e) =>
+                    setPeriod(
+                        e.target.value as FilterInvoicesRequest["period"]
+                    )
+                }
                 className="appearance-none rounded-[var(--radius-input)] border border-[var(--border)] bg-[var(--bg-input)] py-2 pl-3 pr-8 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--border-active)]"
-              >
-                <option>July 2026</option>
-                <option>June 2026</option>
-                <option>May 2026</option>
-                <option>April 2026</option>
-              </select>
+            >
+                <option value="ALL_TIME">All time</option>
+                <option value="LAST_3_MONTHS">Last 3 months</option>
+                <option value="LAST_6_MONTHS">Last 6 months</option>
+                <option value="LAST_12_MONTHS">Last 12 months</option>
+            </select>
               <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--text-muted)]" />
             </div>
           </div>
@@ -92,7 +118,24 @@ export default function Invoices(){
               </tr>
             </thead>
             <tbody>
-              {invoices.map((invoice) => {
+              {invoices.length === 0 ? (
+                <tr>
+                  <td colSpan={5}>
+                    <div className="flex flex-col items-center justify-center py-12 text-center">
+                      <FileText className="h-10 w-10 text-[var(--text-muted)]" />
+
+                      <h3 className="mt-3 text-sm font-semibold text-[var(--text-primary)]">
+                        No invoices found
+                      </h3>
+
+                      <p className="mt-1 text-sm text-[var(--text-muted)]">
+                        Try changing your filters or check back later.
+                      </p>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+              invoices.map((invoice) => {
                 const isFailed = invoice.status === "FAILED";
 
                 return (
@@ -144,7 +187,7 @@ export default function Invoices(){
 
                   </tr>
                 );
-              })}
+              }))}
             </tbody>
           </table>
         </div>

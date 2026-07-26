@@ -1,5 +1,8 @@
 package com.saas.billing.billing_service.controller;
 
+import com.saas.billing.billing_service.domain.enums.InvoiceStatus;
+import com.saas.billing.billing_service.domain.enums.PeriodValue;
+import com.saas.billing.billing_service.dto.request.FilterMyInvoicesRequest;
 import com.saas.billing.billing_service.dto.response.InvoiceResponse;
 import com.saas.billing.billing_service.security.AuthenticatedUser;
 import com.saas.billing.billing_service.service.InvoiceService;
@@ -35,6 +38,18 @@ public class InvoiceController {
 
         return ResponseEntity.ok(
                 invoiceService.getMyInvoices(userId)
+        );
+    }
+
+    @GetMapping("/me/filter")
+    public ResponseEntity<List<InvoiceResponse>> filterMyInvoices(
+            @RequestParam(required = false) InvoiceStatus status,
+            @RequestParam PeriodValue period
+
+    ){
+        UUID userId = extractUserId();
+        return ResponseEntity.ok(
+                invoiceService.filterMyInvoices(userId, status, period)
         );
     }
 

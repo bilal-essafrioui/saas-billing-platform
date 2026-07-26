@@ -168,7 +168,7 @@ public class SubscriptionService {
         Subscription subscription = subscriptionRepository
                 .findByUser(user)
                 .orElseThrow(() -> new SubscriptionNotFoundException(
-                        "No subscription found for user : " + userId
+                        "No subscription found, choose a plan first"
                 ));
         return toResponse(subscription);
     }

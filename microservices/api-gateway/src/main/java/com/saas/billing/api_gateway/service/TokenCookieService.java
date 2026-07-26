@@ -83,6 +83,7 @@ public class TokenCookieService {
         ResponseCookie jwtCookie = ResponseCookie
                 .from("jwt_token", "")
                 .httpOnly(true)
+                .secure(SECURE)
                 .path("/")
                 .maxAge(0)
                 .sameSite("Strict")
@@ -91,6 +92,7 @@ public class TokenCookieService {
         ResponseCookie refreshCookie = ResponseCookie
                 .from("refresh_token", "")
                 .httpOnly(true)
+                .secure(SECURE)
                 .path("/api/auth/refresh")
                 .maxAge(0)
                 .sameSite("Strict")

@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { AxiosError } from "axios";
 
-import { getMyInvoices } from "../api/invoice.api";
+import { getMyInvoices, filterInvoices as filterInvoicesApi, } from "../api/invoice.api";
 import  type { InvoiceResponse, InvoiceErrorResponse } from "../types/invoice.types";
+import type { FilterInvoicesRequest } from "../types/filterInvoices.types";
 
 export function useMyInvoices() {
   const [invoices, setInvoices] = useState<InvoiceResponse[]>([]);
@@ -38,10 +39,39 @@ export function useMyInvoices() {
     }
   };
 
+  const filterInvoices = async (filters: FilterInvoicesRequest) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const data = await filterInvoicesApi(filters);
+
+      setInvoices(data);
+    } catch (err) {
+      const error = err as AxiosError<InvoiceErrorResponse>;
+
+      if (error.response) {
+        setError(error.response.data);
+      } else {
+        setError({
+          status: 500,
+          error: "UNKNOWN_ERROR",
+          message: "Something went wrong.",
+          timestamp: new Date().toISOString(),
+        });
+      }
+
+      setInvoices([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     invoices,
     loading,
     error,
     fetchInvoices,
+    filterInvoices,
   };
 }

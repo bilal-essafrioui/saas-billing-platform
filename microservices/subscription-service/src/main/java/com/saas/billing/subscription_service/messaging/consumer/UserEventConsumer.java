@@ -128,4 +128,30 @@ public class UserEventConsumer {
             );
         }
     }
+
+    // ════════════════════════════════════
+    // ÉCOUTER subscription-suspended
+    // → mettre à jour statut to SUSPENDED
+    // ════════════════════════════════════
+
+    @KafkaListener(
+            topics = KafkaTopics.SUBSCRIPTION_SUSPENDED,
+            groupId = "subscription-service"
+    )
+    public void handleSubscriptionSuspended(String message) {
+        try {
+            var node = objectMapper.readTree(message);
+            java.util.UUID subscriptionId = java.util.UUID.fromString(
+                    node.get("subscriptionId").asText()
+            );
+
+            subscriptionStatusUpdater.onSubscriptionSuspended(subscriptionId);
+
+        } catch (Exception e) {
+            System.err.println(
+                    "Error processing  subscription-suspended : "
+                            + e.getMessage()
+            );
+        }
+    }
 }

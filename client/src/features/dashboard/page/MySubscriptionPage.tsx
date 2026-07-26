@@ -32,7 +32,24 @@ const statusStyles: Record<SubscriptionStatus, { bg: string; text: string; borde
   CANCELLED: { bg: "var(--bg-card-hover)", text: "var(--text-muted)", border: "var(--border)" },
 };
 
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
 
+function addDays(date: string, days: number) {
+  const result = new Date(date);
+  result.setDate(result.getDate() + days);
+
+  return result.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
 
 function Badge({ bg, text, border, label }: { bg: string; text: string; border: string; label: string }) {
   return (
@@ -159,6 +176,40 @@ export default function MySubscriptionPage() {
               ? "Cancelling..."
               : "Cancel Scheduled Downgrade"}
           </button>
+        </div>
+      )}
+
+      {/* PAST DUE BANNER*/}
+      {/* Payment failed banner */}
+      {subscription?.status === "PAST_DUE" && subscription.nextRenewalDate && (
+        <div className="mt-5 flex items-start gap-3 rounded-[var(--radius-card)] border border-[var(--error-border)] bg-[var(--error-bg)] px-4 py-3">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[var(--error-text)]" />
+
+          <div className="text-sm text-[var(--error-text)]">
+            <p className="font-medium">
+              Your subscription is currently past due.
+            </p>
+
+            <p className="mt-1">
+              Your latest payment attempt failed. We will automatically retry the payment:
+            </p>
+
+            <ul className="mt-2 list-disc space-y-1 pl-5">
+              <li>
+                First retry: {addDays(subscription.nextRenewalDate, 1)}
+              </li>
+              <li>
+                Second retry: {addDays(subscription.nextRenewalDate, 3)}
+              </li>
+              <li>
+                Final retry: {addDays(subscription.nextRenewalDate, 7)}
+              </li>
+            </ul>
+
+            <p className="mt-2">
+              If all payment attempts fail, your subscription will be suspended.
+            </p>
+          </div>
         </div>
       )}
 

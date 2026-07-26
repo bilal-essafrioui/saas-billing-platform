@@ -46,3 +46,8 @@ export async function me(): Promise<User> {
   return response.data;
 }
 
+// logout 
+export async function logout(): Promise<void> {
+  await client.post("/auth/logout");
+}
+

@@ -1,8 +1,10 @@
 import { useEffect, useState, useCallback } from "react";
 import type { ReactNode } from "react";
 import { AuthContext } from "../contexts/AuthContext";
-import { me } from "../../features/auth/api/auth.api";
+import { me, logout as logoutApi  } from "../../features/auth/api/auth.api";
 import type { User } from "../../features/auth/types/auth.types";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 type Props = {
   children: ReactNode;
@@ -11,6 +13,7 @@ type Props = {
 export default function AuthProvider({ children }: Props) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   const checkAuth = useCallback(async () => {
     try {
@@ -24,6 +27,17 @@ export default function AuthProvider({ children }: Props) {
     }
   }, []);
 
+  const logout = useCallback(async () => {
+    try {
+      await logoutApi();
+      setUser(null);
+      navigate("/");
+      toast.success("Logged out successfully!");
+    } catch {
+      toast.error("Failed to log out.");
+    }
+  }, [navigate]);
+
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
@@ -34,6 +48,7 @@ export default function AuthProvider({ children }: Props) {
         user,
         loading,
         checkAuth,
+        logout,
       }}
     >
       {children}

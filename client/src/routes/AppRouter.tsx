@@ -11,6 +11,7 @@ import ProtectedRoute from "../components/ProtectedRoute";
 import DashboardPage from "../features/dashboard/page/DashboardPage";
 import MySubscriptionPage from "../features/dashboard/page/MySubscriptionPage";
 import PaymentsAndInvoicesPage from "../features/dashboard/page/PaymentsAndInvoicesPage";
+import AccountSuspendedPage from "../features/subscription/page/AccountSuspendedPage";
 
 export default function AppRouter() {
   return (
@@ -20,13 +21,13 @@ export default function AppRouter() {
       <Route path="/verify-email" element={<VerificationForm />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/choose-plan" element={<ChoosePlanPage />} />
-      <Route path="/payment/success" element={<PaymentSuccessPage />} />
       <Route path="/spinner" element={<Spinner />} />
       
       {/* DASHBOARD */}
-
       {/* Routes protégées */}
       <Route element={<ProtectedRoute />}>
+        <Route path="/payment/success" element={<PaymentSuccessPage />} />
+        <Route path="/suspended" element={<AccountSuspendedPage />} />
         <Route path="/dashboard" element={<DashboardLayout />}>
         {/* Route */}
           <Route index element={<DashboardPage />}/>

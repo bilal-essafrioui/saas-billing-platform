@@ -28,14 +28,15 @@ const adminNavItems = [
 
 const customerNavItems = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutGrid },
-  { label: "My Invoices", href: "/dashboard/invoices", icon: FileText },
+  
   { label: "My Subscription", href: "/dashboard/subscription", icon: List },
-  { label: "Payment", href: "/dashboard/payment", icon: CreditCard },
+  { label: "Payment & Invoices", href: "/dashboard/payment", icon: CreditCard },
+  { label: "My Invoices", href: "/dashboard/invoices", icon: FileText },
   { label: "Settings", href: "/dashboard/settings", icon: Settings },
 ];
 
 export default function Sidebar() {
-  const { user} = useAuth();
+  const { user, logout} = useAuth();
   const isAdmin = user?.role === "ADMIN";
   const navItems = isAdmin ? adminNavItems : customerNavItems;
   console.log("FROM API CONTEXT: ", user);
@@ -43,7 +44,7 @@ export default function Sidebar() {
   const initials = user ? `${user.firstName[0]}${user.lastName[0]}`.toUpperCase() : "";
 
   return (
-    <aside className="flex h-screen w-[var(--sidebar-width)] flex-col justify-between border-r border-[var(--border)] bg-[var(--bg-sidebar)] px-4 py-6">
+    <aside className="sticky top-0 flex h-screen w-[var(--sidebar-width)] flex-col justify-between border-r border-[var(--border)] bg-[var(--bg-sidebar)] px-4 py-6">
       <div>
         {/* Logo */}
         <div className="mb-7 flex items-center gap-2 px-2">
@@ -77,6 +78,7 @@ export default function Sidebar() {
               <NavLink
                 key={item.href}
                 to={item.href}
+                end={item.href === "/dashboard"}
                 className={({ isActive }) =>
                   `flex items-center justify-between rounded-[var(--radius-button)] px-3 py-2.5 text-sm transition-colors ${
                     isActive
@@ -122,6 +124,7 @@ export default function Sidebar() {
           </button>
           <button
             type="button"
+            onClick={logout}
             className="flex items-center gap-3 rounded-[var(--radius-button)] px-3 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-card)] hover:text-[var(--text-primary)] cursor-pointer"
           >
             <LogOut className="h-4 w-4" />

@@ -3,6 +3,8 @@ package com.saas.billing.billing_service.service;
 import com.saas.billing.billing_service.domain.entity.Invoice;
 import com.saas.billing.billing_service.domain.enums.InvoiceStatus;
 import com.saas.billing.billing_service.domain.enums.InvoiceType;
+import com.saas.billing.billing_service.domain.enums.PeriodValue;
+import com.saas.billing.billing_service.dto.request.FilterMyInvoicesRequest;
 import com.saas.billing.billing_service.dto.response.InvoiceResponse;
 import com.saas.billing.billing_service.exception.InvoiceNotFoundException;
 import com.saas.billing.billing_service.messaging.producer.BillingEventPublisher;
@@ -10,6 +12,7 @@ import com.saas.billing.billing_service.messaging.producer.ProrationInvoiceEvent
 import com.saas.billing.billing_service.repository.InvoiceRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -194,6 +197,31 @@ public class InvoiceService {
     public List<InvoiceResponse> getMyInvoices(UUID userId) {
         return invoiceRepository
                 .findByUserIdOrderByCreatedAtDesc(userId)
+                .stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<InvoiceResponse> filterMyInvoices(
+            UUID userId,
+            InvoiceStatus status,
+            PeriodValue period
+    ) {
+
+        LocalDate startDate = null;
+
+        if (period != PeriodValue.ALL_TIME) {
+            startDate = LocalDate.now()
+                    .minusMonths(period.getMonths());
+        }
+
+        return invoiceRepository
+                .filterInvoices(
+                        userId,
+                        status,
+                        startDate
+                )
                 .stream()
                 .map(this::toResponse)
                 .toList();

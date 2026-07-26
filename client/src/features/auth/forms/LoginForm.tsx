@@ -6,6 +6,7 @@ import { useLogin } from "../hooks/useLogin";
 import useAuth from "../../../app/hooks/useAuth";
 import {useNavigate} from "react-router-dom";
 import { toast } from "sonner";
+import { getMySubscription } from "../../subscription/api/subscription.api";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -15,6 +16,7 @@ export default function LoginPage() {
     useState<string | null>(null);
 
   const { signIn, loading, error } = useLogin();
+
 
   const navigate = useNavigate();
   const { checkAuth } = useAuth();
@@ -44,9 +46,32 @@ export default function LoginPage() {
 
     await checkAuth();
 
-    toast.success("Login successful!");
+    try {
+      const subscription = await getMySubscription();
 
-    navigate("/dashboard");
+      if (subscription.status === "SUSPENDED") {
+        navigate("/suspended", {
+          state: {
+            nextRenewalDate: subscription.nextRenewalDate,
+            planName: subscription.planName,
+          },
+        });
+
+        return;
+      }
+
+      toast.success("Login successful!");
+      navigate("/dashboard");
+
+    } catch (err) {
+
+      navigate("/choose-plan", {
+        replace: true,
+        state: {
+          email: email,
+        },
+      });
+    }
   };
 
   return (

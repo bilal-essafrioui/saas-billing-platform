@@ -6,6 +6,8 @@ public class KafkaTopics {
     public static final String USER_CREATED = "user-created";
     public static final String PAYMENT_SUCCEEDED = "payment-succeeded";
     public static final String PAYMENT_FAILED = "payment-failed";
+    public static final String SUBSCRIPTION_SUSPENDED =
+            "subscription-suspended";
 
     // topics que subscription-service Publishes
     public static final String SUBSCRIPTION_CREATED = "subscription-created";
