@@ -38,7 +38,6 @@ public class JwtAuthFilter extends
                 return exchange.getResponse().setComplete();
             }
 
-            // token invalide → 401
             if (!jwtService.isTokenValid(token)) {
                 exchange.getResponse()
                         .setStatusCode(HttpStatus.UNAUTHORIZED);

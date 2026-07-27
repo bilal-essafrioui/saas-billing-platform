@@ -107,8 +107,28 @@ export default function DashboardPage() {
     year: "numeric",
     });
 
-  const currentStatus = subscription?.status ?? "ACTIVE";
-  const statusConfig = subscriptionStatusConfig[currentStatus];
+  const isCancellationPending =
+  subscription?.status === "CANCELLED" &&
+  subscription.nextRenewalDate &&
+  new Date(subscription.nextRenewalDate) > new Date();
+
+  const currentStatus = isCancellationPending
+    ? "ACTIVE"
+    : (subscription?.status ?? "ACTIVE");
+
+  const statusConfig = isCancellationPending
+    ? {
+        ...subscriptionStatusConfig.ACTIVE,
+        description: `Subscription cancelled — active until ${new Date(
+          subscription!.nextRenewalDate
+        ).toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        })}`,
+      }
+    : subscriptionStatusConfig[currentStatus];
+
 
   if (loading) {
     return <Spinner />;
@@ -187,7 +207,11 @@ export default function DashboardPage() {
             />
           </div>
           <p className="mt-3 text-2xl font-semibold text-[var(--text-primary)]">
-            {currentStatus === "ACTIVE" ? "All Good" : statusConfig.label}
+            {isCancellationPending
+              ? "Cancellation Scheduled"
+              : currentStatus === "ACTIVE"
+                ? "All Good"
+                : statusConfig.label}
           </p>
           <p className="mt-1 flex items-center gap-1.5 text-sm" style={{ color: statusConfig.text }}>
             {statusConfig.icon}

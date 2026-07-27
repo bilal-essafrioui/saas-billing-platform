@@ -28,6 +28,7 @@ const eventTypeMeta: Record<SubscriptionEventType, { icon: LucideIcon; color: st
   CANCELLED: { icon: XCircle, color: "var(--text-muted)", label: "Cancelled" },
   RESUBSCRIBED: { icon: RotateCcw, color: "var(--success-text)", label: "Resubscribed" },
   SUSPENSION: { icon: PauseCircle, color: "var(--error-text)", label: "Suspension" },
+  CANCELLATION_CANCELLED: { icon: RotateCcw, color: "var(--success-text)",label: "Cancellation Undone"},
 };
 
 
@@ -110,23 +111,39 @@ export default function SubscriptionEvents() {
                     {event.previousPlanName ? (
                       <>
                         <div className="flex items-center gap-1.5">
-                          <span className="text-[var(--text-muted)]">{event.previousPlanName}</span>
-                          <span className="text-[var(--text-muted)]">→</span>
-                          <span className="font-medium text-[var(--text-primary)]">{event.newPlanName}</span>
+                          <span className="text-[var(--text-muted)]">
+                            {event.previousPlanName}
+                          </span>
+
+                          {event.newPlanName && (
+                            <>
+                              <span className="text-[var(--text-muted)]">→</span>
+                              <span className="font-medium text-[var(--text-primary)]">
+                                {event.newPlanName}
+                              </span>
+                            </>
+                          )}
                         </div>
+
                         <div className="mt-0.5 text-xs text-[var(--text-muted)]">
-                          ${formatMoney(event.previousPlanPrice)} → ${formatMoney(event.newPlanPrice)}
+                          ${formatMoney(event.previousPlanPrice)}
+
+                          {event.newPlanPrice != null && (
+                            <> → ${formatMoney(event.newPlanPrice)}</>
+                          )}
                         </div>
                       </>
                     ) : (
                       <>
-                        <span className="font-medium text-[var(--text-primary)]">{event.newPlanName}</span>
+                        <span className="font-medium text-[var(--text-primary)]">
+                          {event.newPlanName}
+                        </span>
                         <div className="mt-0.5 text-xs text-[var(--text-muted)]">
                           ${formatMoney(event.newPlanPrice)}
                         </div>
                       </>
                     )}
-                  </td>
+                </td>
 
                   <td className="py-4 pr-4 align-top whitespace-nowrap">
                     <span className="inline-flex items-center gap-1.5">

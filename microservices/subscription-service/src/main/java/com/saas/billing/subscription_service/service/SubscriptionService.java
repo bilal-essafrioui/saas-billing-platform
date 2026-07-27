@@ -139,7 +139,24 @@ public class SubscriptionService {
         UserCache user = getUserCache(event.userId());
 
         // idempotence : si une subscription existe déjà, ignorer
-        if (subscriptionRepository.existsByUser(user)) {
+        Optional<Subscription> existing =
+                subscriptionRepository.findByUser(user);
+
+        if (existing.isPresent()) {
+
+            Subscription subscription = existing.get();
+
+            if (subscription.getStatus() == SubscriptionStatus.CANCELLED) {
+
+                resubscribe(subscription, event.planId(), event.paymentId());
+
+                return;
+            }
+
+            // idempotency
+            return;
+        }
+        /*if (subscriptionRepository.existsByUser(user)) {
             Subscription subscription =
                     subscriptionRepository.findByUser(user).orElseThrow();
 
@@ -147,7 +164,7 @@ public class SubscriptionService {
                     subscription.getNextRenewalDate().plusMonths(1)
             );
             return;
-        }
+        }*/
 
         // récupérer le plan acheté
         Plan plan = getActivePlan(event.planId());
@@ -304,6 +321,7 @@ public class SubscriptionService {
 
     @Transactional
     public SubscriptionResponse cancelSubscription(UUID userId) {
+        System.out.print("---cancel subscription method service reached !");
         UserCache user = getUserCache(userId);
         Subscription subscription = subscriptionRepository
                 .findByUser(user)
@@ -331,6 +349,43 @@ public class SubscriptionService {
 
         // publish in Kafka
         eventPublisher.publishSubscriptionCancelled(subscription);
+
+        return toResponse(subscription);
+    }
+
+    // undo cancel subscription
+    @Transactional
+    public SubscriptionResponse undoCancellation(UUID userId) {
+
+        UserCache user = getUserCache(userId);
+
+        Subscription subscription = subscriptionRepository
+                .findByUser(user)
+                .orElseThrow(() ->
+                        new SubscriptionNotFoundException(
+                                "No subscription found."
+                        ));
+
+        if (subscription.getStatus() != SubscriptionStatus.CANCELLED) {
+            throw new BusinessException(
+                    "Subscription is not cancelled."
+            );
+        }
+
+        if (subscription.getNextRenewalDate().isBefore(LocalDate.now())) {
+            throw new BusinessException(
+                    "Cancellation can no longer be undone."
+            );
+        }
+
+        subscription.setStatus(SubscriptionStatus.ACTIVE);
+        subscription.setCancelledAt(null);
+
+        subscriptionRepository.save(subscription);
+
+        eventService.recordCancellationCancelled(subscription);
+
+        //eventPublisher.publishCancellationUndone(subscription);
 
         return toResponse(subscription);
     }
@@ -521,6 +576,32 @@ public class SubscriptionService {
         eventPublisher.publishSubscriptionCreated(subscription, paymentId);
 
         return toResponse(subscription);
+    }
+
+    private void resubscribe(
+            Subscription subscription,
+            UUID planId,
+            UUID paymentId
+    ) {
+
+        Plan plan = getActivePlan(planId);
+
+        LocalDate today = LocalDate.now();
+
+        subscription.setPlan(plan);
+        subscription.setStatus(SubscriptionStatus.ACTIVE);
+        subscription.setStartDate(today);
+        subscription.setNextRenewalDate(today.plusMonths(1));
+
+        subscription.setCancelledAt(null);
+        subscription.setPendingPlanId(null);
+        subscription.setPendingPlanEffectiveDate(null);
+
+        subscriptionRepository.save(subscription);
+
+        eventService.recordResubscribed(subscription);
+
+        eventPublisher.publishSubscriptionCreated(subscription, paymentId);
     }
 
     /*private SubscriptionResponse resubscribe(

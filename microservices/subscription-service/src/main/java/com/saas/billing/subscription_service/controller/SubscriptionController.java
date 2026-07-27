@@ -127,12 +127,22 @@ public class SubscriptionController {
     // résilier l'abonnement
     // ════════════════════════════════════
 
-    @DeleteMapping("/me/cancel")
+    @PatchMapping("/me/cancel")
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<SubscriptionResponse> cancelSubscription() {
         UUID userId = extractUserId();
         return ResponseEntity.ok(
                 subscriptionService.cancelSubscription(userId)
+        );
+    }
+
+    @PatchMapping("/me/cancel/undo")
+    @PreAuthorize("hasRole('CUSTOMER')")
+    public ResponseEntity<SubscriptionResponse> undoCancellation() {
+        UUID userId = extractUserId();
+
+        return ResponseEntity.ok(
+                subscriptionService.undoCancellation(userId)
         );
     }
 

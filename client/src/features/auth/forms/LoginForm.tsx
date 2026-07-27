@@ -60,11 +60,28 @@ export default function LoginPage() {
         return;
       }
 
+      if (
+        subscription.status === "CANCELLED" &&
+        new Date() >= new Date(subscription.nextRenewalDate)
+      ) {
+        toast.info(
+          "Your subscription has been cancelled. Please choose a plan to continue."
+        );
+        navigate("/choose-plan", {
+          replace: true,
+          state: {
+            email,
+          },
+        });
+        
+        return;
+      }
+
       toast.success("Login successful!");
       navigate("/dashboard");
 
     } catch (err) {
-
+      toast.info("Complete your subscription by choosing a plan.");
       navigate("/choose-plan", {
         replace: true,
         state: {

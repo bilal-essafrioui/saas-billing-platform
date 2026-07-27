@@ -8,5 +8,6 @@ public enum SubscriptionEventType {
     DOWNGRADE_APPLIED,   // downgrade applied
     STATUS_CHANGED,      // Status changed
     CANCELLED,           // résiliation
-    RESUBSCRIBED         // re-subscription after annulation
+    RESUBSCRIBED,         // re-subscription after annulation
+    CANCELLATION_CANCELLED
 }

@@ -115,6 +115,20 @@ public class SubscriptionEventService {
     }
 
     @Transactional
+    public void recordCancellationCancelled(Subscription subscription) {
+        record(
+                subscription,
+                SubscriptionEventType.CANCELLATION_CANCELLED,
+                subscription.getPlan(),
+                subscription.getPlan(),
+                SubscriptionStatus.CANCELLED,
+                SubscriptionStatus.ACTIVE,
+                null,
+                "Subscription cancellation cancelled"
+        );
+    }
+
+    @Transactional
     public void recordStatusChanged(
             Subscription subscription,
             SubscriptionStatus previousStatus,

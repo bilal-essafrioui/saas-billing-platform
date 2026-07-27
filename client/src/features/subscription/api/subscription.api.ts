@@ -59,3 +59,13 @@ export async function cancelPendingChange(): Promise<SubscriptionResponse> {
 
   return response.data;
 }
+
+export async function cancelSubscription(): Promise<SubscriptionResponse> {
+  const response = await client.patch("/subscriptions/me/cancel");
+  return response.data;
+}
+
+export async function undoCancellation(): Promise<SubscriptionResponse> {
+  const response = await client.patch("/subscriptions/me/cancel/undo");
+  return response.data;
+}

@@ -10,6 +10,8 @@ import { X } from "lucide-react";
 import PlanChangePreviewModal from "../../subscription/components/PlanChangePreviewModal";
 import { useChangePlan } from "../../subscription/hooks/useChangePlan";
 import { useCancelPendingChange } from "../../subscription/hooks/useCancelPendingChange";
+import { useCancelSubscription } from "../../subscription/hooks/useCancelSubscription";
+import { useUndoCancellation } from "../../subscription/hooks/useUndoCancellation";
 
 /**
  * BillFlow "My Subscription" page — main content only.
@@ -71,6 +73,9 @@ export default function MySubscriptionPage() {
   const { preview, loading: previewLoading, error: previewError, fetchPreview,} = usePreviewPlanChange();
   const { confirmChangePlan, loading: changeLoading, error: changeError,} = useChangePlan();
   const { cancelChange, loading: cancelLoading, error: cancelError,} = useCancelPendingChange();
+  const { cancelSubscription, loading: cancellingSubscription, error: cancelSubscriptionError,} = useCancelSubscription();
+  const { undoCancellation, loading: undoLoading, error: undoError,} = useUndoCancellation();
+  
 
   if (loading) return <Spinner />;
 
@@ -136,6 +141,34 @@ export default function MySubscriptionPage() {
     }
   };
 
+  const handleCancelSubscription = async () => {
+    try {
+      await cancelSubscription();
+
+      await refetch();
+
+      toast.success("Subscription cancelled successfully.");
+    } catch {
+      if (cancelSubscriptionError) {
+        toast.error(cancelSubscriptionError.message);
+      }
+    }
+  };
+
+  const handleUndoCancellation = async () => {
+    try {
+      await undoCancellation();
+
+      await refetch();
+
+      toast.success("Subscription cancellation undone successfully.");
+    } catch {
+      if (undoError) {
+        toast.error(undoError.message);
+      }
+    }
+  };
+
   const renewalDate = subscription?.nextRenewalDate
     ? new Date(subscription.nextRenewalDate).toLocaleDateString("en-US", {
         month: "short",
@@ -143,6 +176,14 @@ export default function MySubscriptionPage() {
         year: "numeric",
       })
     : "N/A";
+
+  //
+  const displayStatus: SubscriptionStatus =
+  subscription?.status === "CANCELLED" &&
+  subscription.nextRenewalDate &&
+  new Date(subscription.nextRenewalDate) > new Date()
+    ? "ACTIVE"
+    : (subscription?.status as SubscriptionStatus);
 
   return (
     <div>
@@ -213,6 +254,36 @@ export default function MySubscriptionPage() {
         </div>
       )}
 
+      {/* Cancelliation banner */}
+      {subscription?.status === "CANCELLED" &&
+      subscription.nextRenewalDate &&
+      new Date(subscription.nextRenewalDate) > new Date() && (
+        <div className="mt-5 flex items-center gap-3 rounded-[var(--radius-card)] border border-[var(--info-border)] bg-[var(--info-bg)] px-4 py-3">
+          <AlertTriangle className="h-4 w-4 shrink-0 text-[var(--info-text)]" />
+
+          <span className="text-sm text-[var(--info-text)]">
+            Your subscription will end on{" "}
+            <strong>
+              {new Date(subscription.nextRenewalDate).toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+              })}
+            </strong>
+            . You can continue using your subscription until then.
+          </span>
+
+          <button
+            type="button"
+            onClick={handleUndoCancellation}
+            disabled={undoLoading}
+            className="ml-auto rounded-[var(--radius-button)] border border-[var(--info-border)] px-3 py-1.5 text-xs font-medium text-[var(--info-text)] hover:bg-[var(--info-border)] cursor-pointer"
+          >
+            {undoLoading ? "Undoing..." : "Undo Cancellation"}
+          </button>
+        </div>
+    )}
+
       {/* Subscription card — full width */}
       <div className="mt-4 rounded-[var(--radius-card)] border border-[var(--border)] bg-[var(--bg-card)] p-5">
         <div className="flex items-center justify-between">
@@ -220,19 +291,32 @@ export default function MySubscriptionPage() {
             <h2 className="text-lg font-semibold text-[var(--text-primary)]">{subscription?.planName} Plan</h2>
             {subscription && (
               <Badge
+                {...statusStyles[displayStatus]}
+                label={displayStatus}
+              />
+            )}
+            {/* 
+            {subscription && (
+              <Badge
                 {...statusStyles[subscription.status]}
                 label={subscription.status}
               />
             )}
+            */}
+            
           </div>
 
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              className="rounded-[var(--radius-button)] border border-[var(--border)] px-4 py-2 text-sm font-medium text-[var(--error-text)] hover:bg-[var(--bg-card-hover)] cursor-pointer"
-            >
-              Cancel Subscription
-            </button>
+            { subscription?.status !== "CANCELLED" && (
+              <button
+                type="button"
+                onClick={handleCancelSubscription}
+                disabled={cancellingSubscription}
+                className="rounded-[var(--radius-button)] border border-[var(--border)] px-4 py-2 text-sm font-medium text-[var(--error-text)] hover:bg-[var(--bg-card-hover)] cursor-pointer"
+              >
+                {cancellingSubscription ? "Cancelling..." : "Cancel Subscription"}
+              </button>
+            )}
             <button
                 type="button"
                 onClick={() => setShowPlans(true)}

@@ -56,7 +56,8 @@ export type SubscriptionEventType =
   | "STATUS_CHANGED"
   | "CANCELLED"
   | "RESUBSCRIBED"
-  | "SUSPENSION";
+  | "SUSPENSION"
+  | "CANCELLATION_CANCELLED";
 
 export interface SubscriptionEventResponse {
   id: string;
