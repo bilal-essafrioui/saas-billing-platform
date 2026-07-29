@@ -21,4 +21,8 @@ public interface PaymentMethodRepository
     Optional<PaymentMethod> findByStripeCustomerId(
             String stripeCustomerId
     );
+
+    Optional<PaymentMethod> findByStripeCustomerIdAndActiveTrue(
+            String stripeCustomerId
+    );
 }

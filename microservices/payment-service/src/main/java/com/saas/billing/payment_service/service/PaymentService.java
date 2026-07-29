@@ -8,6 +8,7 @@ import com.saas.billing.payment_service.dto.request.ChargePaymentRequest;
 import com.saas.billing.payment_service.dto.request.CreatePaymentIntentRequest;
 import com.saas.billing.payment_service.dto.response.ChargePaymentResponse;
 import com.saas.billing.payment_service.dto.response.CreatePaymentIntentResponse;
+import com.saas.billing.payment_service.dto.response.CreateSetupIntentResponse;
 import com.saas.billing.payment_service.dto.response.PaymentResponse;
 import com.saas.billing.payment_service.exception.PaymentMethodNotFoundException;
 import com.saas.billing.payment_service.exception.PaymentNotFoundException;
@@ -16,6 +17,7 @@ import com.saas.billing.payment_service.messaging.producer.PaymentEventPublisher
 import com.saas.billing.payment_service.repository.PaymentRepository;
 import com.stripe.exception.StripeException;
 import com.stripe.model.PaymentIntent;
+import com.stripe.model.SetupIntent;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -451,6 +453,70 @@ public class PaymentService {
                 failureReason,
                 payment.getAttemptNumber()
         );
+    }
+    // ════════════════════════════════════
+    // FLUX 4 — UPDATE PAYMENT METHOD
+    // crée un SetupIntent Stripe
+    // retourne le clientSecret au frontend
+    // ════════════════════════════════════
+
+    @Transactional(readOnly = true)
+    public CreateSetupIntentResponse createSetupIntent(
+            UUID userId) throws StripeException {
+
+        // récupérer le Stripe Customer existant
+        PaymentMethod paymentMethod =
+                paymentMethodService.getPaymentMethodEntity(userId);
+
+        // créer le SetupIntent
+        SetupIntent setupIntent =
+                stripeService.createSetupIntent(
+                        paymentMethod.getStripeCustomerId()
+                );
+
+        // retourner le clientSecret
+        return CreateSetupIntentResponse.builder()
+                .clientSecret(setupIntent.getClientSecret())
+                .build();
+    }
+
+    // ════════════════════════════════════
+    // WEBHOOK HANDLER
+    // appelé après un SetupIntent réussi
+    // mise à jour du moyen de paiement
+    // ════════════════════════════════════
+
+    @Transactional
+    public void handleSetupIntentSucceeded(
+            String stripeCustomerId,
+            String stripePaymentMethodId,
+            String brand,
+            String last4,
+            Integer expMonth,
+            Integer expYear) {
+
+        System.out.println("Searching current payment method...");
+
+        PaymentMethod currentPaymentMethod =
+                paymentMethodService.getByStripeCustomerId(
+                        stripeCustomerId
+                );
+
+        System.out.println("Current payment method found.");
+
+        System.out.println("Replacing payment method...");
+
+        paymentMethodService.replacePaymentMethod(
+                currentPaymentMethod.getUserId(),
+                stripeCustomerId,
+                stripePaymentMethodId,
+                brand,
+                last4,
+                expMonth,
+                expYear
+        );
+
+        System.out.println("Payment method updated successfully.");
     }
 
     // ════════════════════════════════════

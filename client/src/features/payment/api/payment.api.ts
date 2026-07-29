@@ -8,3 +8,16 @@ export const getMyPaymentMethod = async (): Promise<PaymentMethod> => {
 
   return response.data;
 };
+
+
+export interface SetupIntentResponse {
+  clientSecret: string;
+}
+
+export async function createSetupIntent() {
+  const { data } = await client.post<SetupIntentResponse>(
+    "/payments/setup-intent"
+  );
+
+  return data;
+}

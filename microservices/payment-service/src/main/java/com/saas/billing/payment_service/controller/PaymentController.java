@@ -1,10 +1,12 @@
 package com.saas.billing.payment_service.controller;
 
+import com.saas.billing.payment_service.dto.response.CreateSetupIntentResponse;
 import com.saas.billing.payment_service.dto.response.PaymentMethodResponse;
 import com.saas.billing.payment_service.dto.response.PaymentResponse;
 import com.saas.billing.payment_service.security.AuthenticatedUser;
 import com.saas.billing.payment_service.service.PaymentMethodService;
 import com.saas.billing.payment_service.service.PaymentService;
+import com.stripe.exception.StripeException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -77,6 +79,25 @@ public class PaymentController {
     public ResponseEntity<List<PaymentResponse>> getFailedPayments() {
         return ResponseEntity.ok(paymentService.getFailedPayments());
     }
+
+    // ════════════════════════════════════
+    // POST /api/payments/setup-intent
+    // CUSTOMER → mettre à jour son moyen de paiement
+    // crée un SetupIntent Stripe
+    // retourne le clientSecret
+    // ════════════════════════════════════
+
+        @PostMapping("/setup-intent")
+        @PreAuthorize("hasRole('CUSTOMER')")
+        public ResponseEntity<CreateSetupIntentResponse> createSetupIntent()
+                throws StripeException {
+
+            UUID userId = extractUserId();
+
+            return ResponseEntity.ok(
+                    paymentService.createSetupIntent(userId)
+            );
+        }
 
     // ════════════════════════════════════
     // MÉTHODE PRIVÉE

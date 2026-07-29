@@ -14,6 +14,8 @@ export const usePaymentMethod = () => {
       setError(null);
 
       const data = await getMyPaymentMethod();
+      console.log("API returned:", data);
+
       setPaymentMethod(data);
     } catch (err) {
       setError(err as AxiosError);

@@ -107,4 +107,56 @@ public class PaymentMethodService {
                 .active(pm.isActive())
                 .build();
     }
+
+    // ════════════════════════════════════
+    // REMPLACER LE MOYEN DE PAIEMENT
+    // appelé après un SetupIntent réussi
+    // ════════════════════════════════════
+
+    @Transactional
+    public void replacePaymentMethod(
+            UUID userId,
+            String stripeCustomerId,
+            String stripePaymentMethodId,
+            String brand,
+            String last4,
+            Integer expMonth,
+            Integer expYear) {
+
+        paymentMethodRepository
+                .findByUserIdAndActiveTrue(userId)
+                .ifPresent(old -> {
+                    old.setActive(false);
+                    old.setDefault(false);
+                    paymentMethodRepository.save(old);
+                });
+
+        PaymentMethod paymentMethod = PaymentMethod.builder()
+                .userId(userId)
+                .stripeCustomerId(stripeCustomerId)
+                .stripePaymentMethodId(stripePaymentMethodId)
+                .brand(brand)
+                .last4(last4)
+                .expMonth(expMonth)
+                .expYear(expYear)
+                .isDefault(true)
+                .active(true)
+                .build();
+
+        paymentMethodRepository.save(paymentMethod);
+    }
+
+    @Transactional(readOnly = true)
+    public PaymentMethod getByStripeCustomerId(
+            String stripeCustomerId
+    ) {
+        return paymentMethodRepository
+                .findByStripeCustomerIdAndActiveTrue(stripeCustomerId)
+                .orElseThrow(() ->
+                        new PaymentMethodNotFoundException(
+                                "No payment method found for Stripe customer : "
+                                        + stripeCustomerId
+                        )
+                );
+    }
 }

@@ -4,6 +4,7 @@ import com.saas.billing.payment_service.service.PaymentService;
 import com.stripe.exception.SignatureVerificationException;
 import com.stripe.model.Event;
 import com.stripe.model.PaymentIntent;
+import com.stripe.model.SetupIntent;
 import com.stripe.model.StripeObject;
 import com.stripe.net.Webhook;
 import org.springframework.beans.factory.annotation.Value;
@@ -111,6 +112,23 @@ public class StripeWebhookController {
                 }
             }
 
+            case "setup_intent.succeeded" -> {
+
+                Optional<StripeObject> stripeObject =
+                        event.getDataObjectDeserializer()
+                                .getObject();
+
+                if (stripeObject.isPresent()) {
+
+                    SetupIntent setupIntent =
+                            (SetupIntent) stripeObject.get();
+
+                    handleSucceededSetupIntent(
+                            setupIntent.getId()
+                    );
+                }
+            }
+
             default -> System.out.println(
                     "Unhandled event type : " + event.getType()
             );
@@ -162,6 +180,49 @@ public class StripeWebhookController {
                     "Error handling succeeded payment : "
                             + e.getMessage()
             );*/
+            e.printStackTrace();
+        }
+    }
+
+    private void handleSucceededSetupIntent(
+            String setupIntentId) {
+
+        try {
+
+            System.out.println("===== SETUP INTENT SUCCEEDED =====");
+
+            SetupIntent setupIntent =
+                    SetupIntent.retrieve(setupIntentId);
+
+            String customerId =
+                    setupIntent.getCustomer();
+
+            String paymentMethodId =
+                    setupIntent.getPaymentMethod();
+
+            System.out.println("CustomerId      : " + customerId);
+            System.out.println("PaymentMethodId : " + paymentMethodId);
+
+            com.stripe.model.PaymentMethod paymentMethod =
+                    com.stripe.model.PaymentMethod.retrieve(
+                            paymentMethodId
+                    );
+
+            com.stripe.model.PaymentMethod.Card card =
+                    paymentMethod.getCard();
+
+            paymentService.handleSetupIntentSucceeded(
+                    customerId,
+                    paymentMethodId,
+                    card != null ? card.getBrand() : null,
+                    card != null ? card.getLast4() : null,
+                    card != null ? card.getExpMonth().intValue() : null,
+                    card != null ? card.getExpYear().intValue() : null
+            );
+
+            System.out.println("SetupIntent handled successfully.");
+
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }

@@ -3,8 +3,10 @@ package com.saas.billing.payment_service.service;
 import com.stripe.exception.StripeException;
 import com.stripe.model.Customer;
 import com.stripe.model.PaymentIntent;
+import com.stripe.model.SetupIntent;
 import com.stripe.param.CustomerCreateParams;
 import com.stripe.param.PaymentIntentCreateParams;
+import com.stripe.param.SetupIntentCreateParams;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -104,4 +106,25 @@ public class StripeService {
 
         return PaymentIntent.create(params, options);
     }
+
+    // ════════════════════════════════════
+    // CRÉER UN SETUP INTENT
+    // appelé lors de la mise à jour du moyen de paiement
+    // aucun paiement n'est effectué
+    // retourne un clientSecret pour Stripe Elements
+    // ════════════════════════════════════
+
+        public SetupIntent createSetupIntent(
+                String stripeCustomerId) throws StripeException {
+
+            SetupIntentCreateParams params =
+                    SetupIntentCreateParams.builder()
+                            .setCustomer(stripeCustomerId)
+                            .setUsage(
+                                    SetupIntentCreateParams.Usage.OFF_SESSION
+                            )
+                            .build();
+
+            return SetupIntent.create(params);
+        }
 }
