@@ -266,5 +266,10 @@ saas-billing-platform/
 
 ## Author
 
-<YOUR_NAME>
-[GitHub](<YOUR_GITHUB_URL>) · [LinkedIn](<YOUR_LINKEDIN_URL>) · [Portfolio](<YOUR_PORTFOLIO_URL>)
+**ESSAFRIOUI Bilal**
+
+[GitHub](https://github.com/bilal-essafrioui) · [LinkedIn](https://www.linkedin.com/in/bilal-essafrioui/) · [Portfolio](https://bilal-essafrioui.netlify.app/)
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
