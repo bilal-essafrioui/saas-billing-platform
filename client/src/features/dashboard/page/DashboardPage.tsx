@@ -7,6 +7,7 @@ import useAuth from "../../../app/hooks/useAuth";
 import { toast } from "sonner";
 import RecentInvoices from "../../invoice/component/RecentInvoices";
 import type { SubscriptionStatus } from "../../subscription/types/subscription.types";
+import { useEffect } from "react";
 
 
 export type Activity = {
@@ -134,7 +135,7 @@ export default function DashboardPage() {
     return <Spinner />;
   }
 
-  if (error) {
+   if (error) {
     toast.error(error.message);
     navigate("/choose-plan", {
         replace: true,
@@ -144,6 +145,19 @@ export default function DashboardPage() {
       });
     return null;
   }
+
+  /*useEffect(() => {
+    if (!error) return;
+
+    toast.error(error.message);
+
+    navigate("/choose-plan", {
+      replace: true,
+      state: {
+        email: user?.email,
+      },
+    });
+  }, [error, navigate, user?.email]);*/
 
   return (
     <div>

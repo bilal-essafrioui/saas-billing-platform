@@ -76,9 +76,9 @@ export default function Invoices(){
                             : e.target.value as FilterInvoicesRequest["status"]
                     )
                 }
-                className="appearance-none rounded-[var(--radius-input)] border border-[var(--border)] bg-[var(--bg-input)] py-2 pl-3 pr-8 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--border-active)]"
+                className="appearance-none rounded-[var(--radius-input)] border border-[var(--border)] bg-[var(--bg-input)] py-2 pl-3 pr-8 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--border-active)] cursor-pointer"
             >
-                <option value="">All statuses</option>
+                <option className="cursor-pointer" value="">All statuses</option>
                 <option value="PENDING">Pending</option>
                 <option value="PAID">Paid</option>
                 <option value="FAILED">Failed</option>
