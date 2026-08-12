@@ -1,9 +1,9 @@
 spring:
   application:
-    name: billing-service
+    name: dunning-service
 
   datasource:
-    url: jdbc:postgresql://localhost:5435/billing_db
+    url: jdbc:postgresql://localhost:5437/dunning_db
     username: your_postgres_username
     password: your_postgres_password
     driver-class-name: org.postgresql.Driver
@@ -19,7 +19,7 @@ spring:
   kafka:
     bootstrap-servers: localhost:9092
     consumer:
-      group-id: billing-service
+      group-id: dunning-service
       auto-offset-reset: earliest
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
@@ -30,9 +30,19 @@ spring:
       acks: all
       retries: 3
 
-server:
-  port: 8083
+  quartz:
+    job-store-type: memory
+    properties:
+      org:
+        quartz:
+          scheduler:
+            instanceName: DunningScheduler
+          threadPool:
+            threadCount: 3
 
-jwt:
-  secret-key: your_jwt_secret
-  access-token-expiration: 3600000
+server:
+  port: 8085
+
+# URL interne de payment-service
+payment-service:
+  url: http://localhost:8084

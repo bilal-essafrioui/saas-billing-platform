@@ -209,7 +209,7 @@ git clone https://github.com/bilal-essafrioui/saas-billing-platform.git
 cd saas-billing-platform
 ```
 
-Configure required environment variables (Stripe keys, database credentials, Kafka broker address) in your `.env` file or `docker-compose.yml`:
+Configure required environment variables (Stripe keys, database credentials, Kafka broker address) in your `.env` file :
 
 ```text
 STRIPE_API_KEY=<YOUR_VALUE>

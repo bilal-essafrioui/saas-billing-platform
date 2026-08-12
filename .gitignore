@@ -2,3 +2,23 @@
 **/src/main/resources/application.yml
 .idea/
 **/.idea/
+
+.env
+
+# Secrets — ne jamais commit
+.env
+.env.local
+.env.*.local
+
+# Java / Maven
+target/
+*.class
+
+# Node
+node_modules/
+dist/
+
+# IDE
+.idea/
+*.iml
+.vscode/

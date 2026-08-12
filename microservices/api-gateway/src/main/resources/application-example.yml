@@ -1,0 +1,85 @@
+spring:
+  application:
+    name: api-gateway
+
+  cloud:
+    gateway:
+      server:
+        webflux:
+          routes:
+
+            # AUTH SERVICE — routes publiques
+            - id: auth-public
+              uri: http://auth-service:8081
+              predicates:
+                - Path=/api/auth/register,/api/auth/login,/api/auth/refresh,/api/auth/verify-email
+              filters:
+                - name: AuthCookieFilter
+
+            # AUTH SERVICE — logout
+            - id: auth-logout
+              uri: http://auth-service:8081
+              predicates:
+                - Path=/api/auth/logout
+              filters:
+                - name: JwtAuthFilter
+                - name: LogoutCookieFilter
+
+            # AUTH SERVICE — routes protégées
+            - id: auth-protected
+              uri: http://auth-service:8081
+              predicates:
+                - Path=/api/auth/**
+              filters:
+                - name: JwtAuthFilter
+
+            # SUBSCRIPTION SERVICE — public
+            - id: subscription-public
+              uri: http://subscription-service:8082
+              predicates:
+                - Path=/api/subscriptions/plans
+                - Method=GET
+
+            # SUBSCRIPTION SERVICE — protected
+            - id: subscription-protected
+              uri: http://subscription-service:8082
+              predicates:
+                - Path=/api/subscriptions/**
+              filters:
+                - name: JwtAuthFilter
+
+            # BILLING SERVICE
+            - id: billing-service
+              uri: http://billing-service:8083
+              predicates:
+                - Path=/api/invoices/**
+              filters:
+                - name: JwtAuthFilter
+
+            # PAYMENT SERVICE
+            - id: payment-service
+              uri: http://payment-service:8084
+              predicates:
+                - Path=/api/payments/**
+              filters:
+                - name: JwtAuthFilter
+
+            # STRIPE WEBHOOKS — no JWT
+            - id: stripe-webhooks
+              uri: http://payment-service:8084
+              predicates:
+                - Path=/api/webhooks/stripe
+
+server:
+  port: 8080
+
+# JWT configuration
+jwt:
+  secret-key: your_jwt_secret
+  access-token-expiration: 3600000
+  refresh-token-expiration: 604800000
+
+# CORS
+cors:
+  allowed-origins:
+    - http://localhost:5173
